@@ -36,7 +36,13 @@ const {
 
 function buildShopUpdatePayload(params) {
   const payload = buildShopPayload(params);
-  
+  payload.content = null;
+  delete payload.flags;
+  return payload;
+}
+
+function buildRaidUpdatePayload(params) {
+  const payload = { ...params };
   payload.content = null;
   delete payload.flags;
   return payload;
@@ -115,7 +121,7 @@ async function handleComponent(interaction) {
       await sendStatus(interaction, { ok: false, text: "Unable to join this raid session.", ephemeral: true });
       return;
     }
-    await interaction.update(buildLobbyPayload(summary(joined.session)));
+    await interaction.update(buildRaidUpdatePayload(buildLobbyPayload(summary(joined.session))));
     return;
   }
 
@@ -132,7 +138,7 @@ async function handleComponent(interaction) {
       await sendStatus(interaction, { ok: false, text, ephemeral: true });
       return;
     }
-    await interaction.update(buildBattlePayload(summary(started.session)));
+    await interaction.update(buildRaidUpdatePayload(buildBattlePayload(summary(started.session))));
     return;
   }
 
@@ -151,7 +157,7 @@ async function handleComponent(interaction) {
     }
 
     const view = summary(result.session);
-    await interaction.update(buildBattlePayload(view));
+    await interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)));
 
     if (result.ended) {
       const won = Boolean(result.finalResult && result.finalResult.won);
@@ -173,7 +179,7 @@ async function handleComponent(interaction) {
     }
     const session = progressed.session || getSession(sessionId);
     const view = summary(session);
-    await interaction.update(buildBattlePayload(view));
+    await interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)));
     if (progressed.ended && session && session.state === "ended") {
       if (view.defeated.length) {
         await interaction.followUp(buildDefeatedPayload(view));
