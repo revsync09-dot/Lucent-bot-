@@ -1,4 +1,4 @@
-const { Events, MessageFlags, PermissionsBitField } = require("discord.js");
+const { ContainerBuilder, Events, MessageFlags, PermissionsBitField, TextDisplayBuilder } = require("discord.js");
 const { ensureHunter, addXpAndGold, getHunter, xpRequired } = require("../services/hunterService");
 const { getCooldown, setCooldown, remainingSeconds } = require("../services/cooldownService");
 const { runHunt, computePower } = require("../services/combatService");
@@ -41,25 +41,39 @@ const processedMessages = new Set();
 const config = getConfig();
 
 function helpText() {
-  return (
-    `${HELP_EMOJI} **Solo Leveling Prefix Help**\n` +
-    "`!start` / `?start` - Register and get start PNG\n" +
-    "`!profile` / `?profile` - Profile PNG with stat buttons\n" +
-    "`!stats [@user]` - Detailed stats PNG\n" +
-    "`!hunt` / `?hunt` - Hunt PNG and possible unique card drop (0.025%)\n" +
-    "`!dungeon [easy|normal|hard|elite|raid]` - Dungeon result via Components V2\n" +
-    "`!inventory` / `?inventory` - Inventory PNG\n" +
-    "`!cards` / `?cards` - Your card collection (single unique card system)\n" +
-    "`!class [name]` - Show or change class (needs Reawakened Stone)\n" +
-    "`!rankup` - Rank exam and rankup PNG\n" +
-    "`!battle @user` / `!pvp @user` - PvP result PNG\n" +
-    "`!shop` - Open shop selector\n" +
-    "`/use` - Use bought skill scrolls for next raid\n" +
-    "`!setupdungeon [#channel] [minutes]` - Configure auto dungeon Components V2 posts\n" +
-    "`!guild_salary` - Daily salary PNG (restricted)\n" +
-    "`!gate_risk` - Risk gate PNG (restricted)\n" +
-    "`!help` - Show this list"
-  );
+  return [
+    `${HELP_EMOJI} **Solo Leveling Prefix Help**`,
+    "",
+    "**Core**",
+    "!start / ?start -> register profile",
+    "!profile / ?profile -> profile card + stat buttons",
+    "!stats [@user] -> detailed stats card",
+    "!hunt / ?hunt -> hunt rewards + card chance",
+    "!dungeon [easy|normal|hard|elite|raid] -> raid flow",
+    "",
+    "**Progression**",
+    "!inventory / ?inventory -> inventory card",
+    "!cards / ?cards -> card collection",
+    "!class [name] -> class change (stone needed)",
+    "!rankup -> rank exam",
+    "!battle @user / !pvp @user -> PvP",
+    "",
+    "**Systems**",
+    "!shop -> open shop",
+    "/use -> activate bought skill scroll",
+    "!setupdungeon [#channel] [minutes] -> auto dungeon setup",
+    "!guild_salary -> restricted",
+    "!gate_risk -> restricted",
+    "!help -> show this list",
+  ].join("\n");
+}
+
+function prefixHelpV2Payload() {
+  const container = new ContainerBuilder().addTextDisplayComponents(new TextDisplayBuilder().setContent(helpText()));
+  return {
+    components: [container],
+    flags: MessageFlags.IsComponentsV2,
+  };
 }
 
 function mapCollectionCards(owned) {
@@ -106,7 +120,7 @@ module.exports = {
 
     try {
       if (command === "help") {
-        await message.reply(helpText());
+        await message.reply(prefixHelpV2Payload());
         return;
       }
 
