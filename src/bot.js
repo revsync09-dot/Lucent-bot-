@@ -7,6 +7,7 @@ const { getConfig } = require("./config/config");
 
 const config = getConfig();
 const INSTANCE_LOCK_PATH = path.join(process.cwd(), ".solo-leveling.bot.lock");
+const ENABLE_SINGLE_INSTANCE_LOCK = String(process.env.SINGLE_INSTANCE_LOCK || "false").toLowerCase() === "true";
 
 function isProcessRunning(pid) {
   if (!Number.isInteger(pid) || pid <= 0) return false;
@@ -19,6 +20,7 @@ function isProcessRunning(pid) {
 }
 
 function acquireSingleInstanceLock() {
+  if (!ENABLE_SINGLE_INSTANCE_LOCK) return;
   if (fs.existsSync(INSTANCE_LOCK_PATH)) {
     const raw = fs.readFileSync(INSTANCE_LOCK_PATH, "utf8").trim();
     const existingPid = Number(raw);
@@ -34,6 +36,7 @@ function acquireSingleInstanceLock() {
 }
 
 function cleanupInstanceLock() {
+  if (!ENABLE_SINGLE_INSTANCE_LOCK) return;
   try {
     if (!fs.existsSync(INSTANCE_LOCK_PATH)) return;
     const raw = fs.readFileSync(INSTANCE_LOCK_PATH, "utf8").trim();

@@ -8,21 +8,27 @@ module.exports = {
   async execute(client) {
     console.log(`Online as ${client.user.tag}`);
     const config = getConfig();
-    const guild = client.guilds.cache.get(config.discordGuildId) || (await client.guilds.fetch(config.discordGuildId).catch(() => null));
-    if (!guild) {
-      console.error(`[startup:error] Locked guild ${config.discordGuildId} not found or bot is not in that server.`);
-      return;
-    }
-
-    const portalChannel =
-      guild.channels.cache.get(config.portalChannelId) || (await guild.channels.fetch(config.portalChannelId).catch(() => null));
-    if (!portalChannel || !portalChannel.isTextBased()) {
-      console.error(
-        `[startup:error] Portal channel ${config.portalChannelId} not found or not text-based in guild ${config.discordGuildId}.`
-      );
-    }
-
     if (config.discordGuildId && config.portalChannelId) {
+      const guild =
+        client.guilds.cache.get(config.discordGuildId) || (await client.guilds.fetch(config.discordGuildId).catch(() => null));
+      if (!guild) {
+        console.error(`[startup:error] Guild ${config.discordGuildId} not found or bot is not in that server.`);
+        startAutoDungeonLoop(client);
+        return;
+      }
+
+      const portalChannel =
+        guild.channels.cache.get(config.portalChannelId) || (await guild.channels.fetch(config.portalChannelId).catch(() => null));
+      const isTextChannel =
+        Boolean(portalChannel) &&
+        typeof portalChannel.isTextBased === "function" &&
+        portalChannel.isTextBased();
+      if (!isTextChannel) {
+        console.error(
+          `[startup:error] Portal channel ${config.portalChannelId} not found or not text-based in guild ${config.discordGuildId}.`
+        );
+      }
+
       try {
         await upsertDungeonConfig({
           guildId: config.discordGuildId,
