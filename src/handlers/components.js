@@ -14,7 +14,7 @@ const { sendStatus } = require("../utils/statusMessage");
 const { generateProfileCard, generateShadowCard } = require("../services/cardGenerator");
 const { updateUser } = require("../services/database");
 const { sendProgressionBanner } = require("../utils/progressionBanner");
-const { applyPurchase, buildShopPayload, clampPage, getItem } = require("../services/shopService");
+const { applyPurchase, buildShopPayload, buildShopRowsForMessage, buildShopText, clampPage, getItem } = require("../services/shopService");
 const { reserveSpawnJoin, finishSpawnJoin } = require("../services/autoDungeonService");
 const { tryGrantMonarchRole } = require("../utils/rewardRoles");
 const { buildDungeonResultV2Payload } = require("../utils/dungeonResultV2");
@@ -39,6 +39,13 @@ function buildShopUpdatePayload(params) {
   payload.content = null;
   delete payload.flags;
   return payload;
+}
+
+function buildClassicShopPayload({ userId, hunter, page = 0, selectedKey = null, notice = "" }) {
+  return {
+    content: buildShopText({ hunter, page, selectedKey, notice }),
+    components: buildShopRowsForMessage({ userId, page, selectedKey }),
+  };
 }
 
 function buildRaidUpdatePayload(params) {
@@ -383,7 +390,7 @@ async function handleComponent(interaction) {
       return;
     }
     await interaction.update(
-      buildShopUpdatePayload({
+      buildClassicShopPayload({
         userId: interaction.user.id,
         hunter,
         page,
@@ -426,7 +433,7 @@ async function handleComponent(interaction) {
       return;
     }
     await interaction.update(
-      buildShopUpdatePayload({
+      buildClassicShopPayload({
         userId: interaction.user.id,
         hunter,
         page: nextPage,
@@ -453,7 +460,7 @@ async function handleComponent(interaction) {
     }
     if (hunter.gold < item.price) {
       await interaction.update(
-        buildShopUpdatePayload({
+        buildClassicShopPayload({
           userId: interaction.user.id,
           hunter,
           page,
@@ -467,7 +474,7 @@ async function handleComponent(interaction) {
     const patch = applyPurchase(hunter, item);
     const updated = await updateUser(interaction.user.id, interaction.guildId, patch);
     await interaction.update(
-      buildShopUpdatePayload({
+      buildClassicShopPayload({
         userId: interaction.user.id,
         hunter: updated,
         page,
