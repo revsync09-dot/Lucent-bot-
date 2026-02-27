@@ -1,19 +1,23 @@
-app = "solo-leveling-bot"
-primary_region = "iad"
+# fly.toml app configuration file generated for lucent-bot123 on 2026-02-27T21:42:08Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'lucent-bot123'
+primary_region = 'fra'
 
 [build]
-  dockerfile = "Dockerfile"
 
-[deploy]
-  strategy = "immediate"
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
 
-[env]
-  NODE_ENV = "production"
-
-[processes]
-  app = "node src/bot.js"
-
-[vm]
-  cpu_kind = "shared"
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
   cpus = 1
-  memory = "256mb"
+  memory_mb = 256
