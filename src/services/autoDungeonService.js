@@ -19,6 +19,7 @@ let loopHandle = null;
 let inTick = false;
 const SPAWN_JOIN_COOLDOWN_MS = 20_000;
 const SPAWN_JOIN_TTL_MS = 3 * 60 * 60 * 1000;
+const LOCKED_GUILD_ID = "1425973312588091394";
 const AUTO_DUNGEON_BANNER_URL =
   "https://media.discordapp.net/attachments/1477018034169188362/1477023604771127327/a12065b307fca0a2b2018efc702d7a3b.gif?ex=69a340ed&is=69a1ef6d&hm=40e559eeef308b2082adcb3152e8bde539bbd56d79637b67416a70c730f547c5&=";
 
@@ -57,7 +58,7 @@ function isMissingSettingsTable(error) {
 
 function normalizeConfig(row) {
   return {
-    guild_id: row.guild_id,
+    guild_id: LOCKED_GUILD_ID,
     dungeon_channel_id: row.dungeon_channel_id || null,
     dungeon_interval_minutes: Number(row.dungeon_interval_minutes || 15),
     dungeon_enabled: row.dungeon_enabled !== false,
@@ -67,8 +68,12 @@ function normalizeConfig(row) {
 }
 
 async function upsertDungeonConfig({ guildId, channelId, intervalMinutes = 15, enabled = true }) {
+  if (guildId !== LOCKED_GUILD_ID) {
+    throw new Error(`Auto dungeon can only be configured for guild ${LOCKED_GUILD_ID}.`);
+  }
+
   const payload = normalizeConfig({
-    guild_id: guildId,
+    guild_id: LOCKED_GUILD_ID,
     dungeon_channel_id: channelId,
     dungeon_interval_minutes: Math.max(1, Number(intervalMinutes || 15)),
     dungeon_enabled: !!enabled,
@@ -76,9 +81,9 @@ async function upsertDungeonConfig({ guildId, channelId, intervalMinutes = 15, e
   });
 
   if (dbUnavailable) {
-    const old = memoryConfig.get(guildId) || {};
+    const old = memoryConfig.get(LOCKED_GUILD_ID) || {};
     const merged = { ...old, ...payload };
-    memoryConfig.set(guildId, merged);
+    memoryConfig.set(LOCKED_GUILD_ID, merged);
     return merged;
   }
 
@@ -92,15 +97,15 @@ async function upsertDungeonConfig({ guildId, channelId, intervalMinutes = 15, e
 
     if (!error) {
       const normalized = normalizeConfig(data);
-      memoryConfig.set(guildId, normalized);
+      memoryConfig.set(LOCKED_GUILD_ID, normalized);
       return normalized;
     }
 
     if (isMissingSettingsTable(error)) {
       dbUnavailable = true;
-      const old = memoryConfig.get(guildId) || {};
+      const old = memoryConfig.get(LOCKED_GUILD_ID) || {};
       const merged = { ...old, ...payload };
-      memoryConfig.set(guildId, merged);
+      memoryConfig.set(LOCKED_GUILD_ID, merged);
       return merged;
     }
 
@@ -112,9 +117,9 @@ async function upsertDungeonConfig({ guildId, channelId, intervalMinutes = 15, e
     delete attempt[missing];
   }
 
-  const old = memoryConfig.get(guildId) || {};
+  const old = memoryConfig.get(LOCKED_GUILD_ID) || {};
   const merged = { ...old, ...payload };
-  memoryConfig.set(guildId, merged);
+  memoryConfig.set(LOCKED_GUILD_ID, merged);
   return merged;
 }
 
@@ -123,7 +128,11 @@ async function listDungeonConfigs() {
     return Array.from(memoryConfig.values());
   }
 
-  const { data, error } = await supabase.from("guild_settings").select("*").eq("dungeon_enabled", true);
+  const { data, error } = await supabase
+    .from("guild_settings")
+    .select("*")
+    .eq("dungeon_enabled", true)
+    .eq("guild_id", LOCKED_GUILD_ID);
   if (!error) {
     const normalized = (data || []).map(normalizeConfig);
     for (const cfg of normalized) memoryConfig.set(cfg.guild_id, cfg);
@@ -132,13 +141,14 @@ async function listDungeonConfigs() {
 
   if (isMissingSettingsTable(error)) {
     dbUnavailable = true;
-    return Array.from(memoryConfig.values()).filter((x) => x.dungeon_enabled);
+    return Array.from(memoryConfig.values()).filter((x) => x.dungeon_enabled && x.guild_id === LOCKED_GUILD_ID);
   }
 
   throw error;
 }
 
 async function markDungeonPosted(guildId, atIso) {
+  if (guildId !== LOCKED_GUILD_ID) return;
   const old = memoryConfig.get(guildId) || { guild_id: guildId };
   const next = { ...old, last_dungeon_at: atIso, updated_at: nowIso() };
   memoryConfig.set(guildId, next);
@@ -172,6 +182,7 @@ function dueForSpawn(config, nowMs) {
 }
 
 async function postDungeonSpawn(client, config) {
+  if (config.guild_id !== LOCKED_GUILD_ID) return;
   const guild = client.guilds.cache.get(config.guild_id) || (await client.guilds.fetch(config.guild_id).catch(() => null));
   if (!guild) return;
   const channel = guild.channels.cache.get(config.dungeon_channel_id) || (await guild.channels.fetch(config.dungeon_channel_id).catch(() => null));

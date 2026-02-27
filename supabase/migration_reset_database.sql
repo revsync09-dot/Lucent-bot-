@@ -12,7 +12,7 @@ drop table if exists public.hunters cascade;
 
 create table public.hunters (
   user_id text not null,
-  guild_id text not null,
+  guild_id text not null check (guild_id = '1425973312588091394'),
   level integer not null default 1 check (level >= 1),
   exp integer not null default 0 check (exp >= 0),
   rank text not null default 'E-Rank',
@@ -36,7 +36,7 @@ create index idx_hunters_guild on public.hunters(guild_id);
 create table public.shadows (
   id uuid primary key default gen_random_uuid(),
   user_id text not null,
-  guild_id text not null,
+  guild_id text not null check (guild_id = '1425973312588091394'),
   name text not null,
   rank text not null,
   rarity text not null,
@@ -58,7 +58,7 @@ create index idx_shadows_equipped on public.shadows(user_id, guild_id, equipped)
 
 create table public.hunter_cooldowns (
   user_id text not null,
-  guild_id text not null,
+  guild_id text not null check (guild_id = '1425973312588091394'),
   cooldown_key text not null,
   available_at timestamptz not null,
   updated_at timestamptz not null default now(),
@@ -71,7 +71,7 @@ create table public.hunter_cooldowns (
 
 create table public.pvp_ratings (
   user_id text not null,
-  guild_id text not null,
+  guild_id text not null check (guild_id = '1425973312588091394'),
   points integer not null default 1000,
   wins integer not null default 0,
   losses integer not null default 0,
@@ -84,7 +84,7 @@ create table public.pvp_ratings (
 );
 
 create table public.guild_settings (
-  guild_id text primary key,
+  guild_id text primary key check (guild_id = '1425973312588091394'),
   dungeon_channel_id text,
   dungeon_interval_minutes integer not null default 15 check (dungeon_interval_minutes >= 1),
   dungeon_enabled boolean not null default true,
