@@ -1,0 +1,19 @@
+app = "solo-leveling-bot"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  strategy = "immediate"
+
+[env]
+  NODE_ENV = "production"
+
+[processes]
+  app = "node src/bot.js"
+
+[vm]
+  cpu_kind = "shared"
+  cpus = 1
+  memory = "256mb"

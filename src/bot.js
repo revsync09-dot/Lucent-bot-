@@ -1,0 +1,104 @@
+require("dotenv").config();
+
+const fs = require("fs");
+const path = require("path");
+const { Client, Collection, GatewayIntentBits } = require("discord.js");
+const { getConfig } = require("./config/config");
+
+const config = getConfig();
+const INSTANCE_LOCK_PATH = path.join(process.cwd(), ".solo-leveling.bot.lock");
+
+function isProcessRunning(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function acquireSingleInstanceLock() {
+  if (fs.existsSync(INSTANCE_LOCK_PATH)) {
+    const raw = fs.readFileSync(INSTANCE_LOCK_PATH, "utf8").trim();
+    const existingPid = Number(raw);
+    if (isProcessRunning(existingPid) && existingPid !== process.pid) {
+      console.error(
+        `[startup:error] Another bot instance is already running (PID ${existingPid}). Stop it before starting a new one.`
+      );
+      process.exit(1);
+    }
+  }
+
+  fs.writeFileSync(INSTANCE_LOCK_PATH, String(process.pid), "utf8");
+}
+
+function cleanupInstanceLock() {
+  try {
+    if (!fs.existsSync(INSTANCE_LOCK_PATH)) return;
+    const raw = fs.readFileSync(INSTANCE_LOCK_PATH, "utf8").trim();
+    if (Number(raw) === process.pid) {
+      fs.unlinkSync(INSTANCE_LOCK_PATH);
+    }
+  } catch (error) {
+    console.error("[lock:cleanup:error]", error);
+  }
+}
+
+acquireSingleInstanceLock();
+
+process.on("exit", cleanupInstanceLock);
+process.on("SIGINT", () => {
+  cleanupInstanceLock();
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  cleanupInstanceLock();
+  process.exit(0);
+});
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent,
+  ],
+});
+client.commands = new Collection();
+
+process.on("unhandledRejection", (error) => {
+  console.error("[unhandledRejection]", error);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("[uncaughtException]", error);
+});
+
+client.on("error", (error) => {
+  console.error("[client:error]", error);
+});
+
+client.on("shardError", (error) => {
+  console.error("[client:shardError]", error);
+});
+
+const commandsPath = path.join(__dirname, "commands");
+for (const file of fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js"))) {
+  const command = require(path.join(commandsPath, file));
+  if (command.data && command.execute) {
+    client.commands.set(command.data.name, command);
+  }
+}
+
+const eventsPath = path.join(__dirname, "events");
+for (const file of fs.readdirSync(eventsPath).filter((f) => f.endsWith(".js"))) {
+  const event = require(path.join(eventsPath, file));
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args, client));
+  } else {
+    client.on(event.name, (...args) => event.execute(...args, client));
+  }
+}
+
+client.login(config.discordToken);

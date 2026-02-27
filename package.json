@@ -1,0 +1,28 @@
+{
+  "name": "solo-leveling",
+  "version": "1.0.0",
+  "description": "Solo Leveling RPG Discord Bot with Supabase backend and v2 components",
+  "main": "src/bot.js",
+  "scripts": {
+    "start": "node src/bot.js",
+    "dev": "node --watch src/bot.js",
+    "deploy:commands": "node src/scripts/deployCommands.js"
+  },
+  "keywords": [
+    "discord",
+    "rpg",
+    "supabase",
+    "solo-leveling"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@discordjs/rest": "^2.6.0",
+    "@supabase/supabase-js": "^2.97.0",
+    "discord-api-types": "^0.38.40",
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.3.1",
+    "skia-canvas": "^3.0.8"
+  }
+}

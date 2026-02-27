@@ -1,0 +1,420 @@
+const { Events, MessageFlags, PermissionsBitField } = require("discord.js");
+const { ensureHunter, addXpAndGold, getHunter, xpRequired } = require("../services/hunterService");
+const { getCooldown, setCooldown, remainingSeconds } = require("../services/cooldownService");
+const { runHunt, computePower } = require("../services/combatService");
+const { runDungeon } = require("../services/dungeonService");
+const { cooldownRemaining, nextCooldown } = require("../utils/cooldownHelper");
+const {
+  generateBattleResultCard,
+  generateCardsCollectionCard,
+  generateGateCard,
+  generateHuntResultCard,
+  generateInventoryCard,
+  generateProfileCard,
+  generateRankupCard,
+  generateSalaryCard,
+  generateStartCard,
+  generateStatsCard,
+} = require("../services/cardGenerator");
+const { dungeonSelectionRows, profileRows } = require("../handlers/components");
+const { getEquippedShadows } = require("../services/shadowService");
+const { getBattleBonus, getOwnedCards, tryGrantSingleCard } = require("../services/cardsService");
+const { runPvp } = require("../services/pvpService");
+const { updateUser } = require("../services/database");
+const { RANKS, RANK_THRESHOLDS, DUNGEON_DIFFICULTIES } = require("../utils/constants");
+const { randomInt } = require("../utils/math");
+const { buildShopRowsForMessage, buildShopText } = require("../services/shopService");
+const { upsertDungeonConfig } = require("../services/autoDungeonService");
+const { getConfig } = require("../config/config");
+const {
+  HUNTER_CLASSES,
+  getHunterClass,
+  consumeReawakenedStoneAndSetClass,
+  normalizeClass,
+} = require("../services/classService");
+const { tryGrantMonarchRole } = require("../utils/rewardRoles");
+const { buildDungeonResultV2Payload } = require("../utils/dungeonResultV2");
+
+const PREFIXES = ["!", "?"];
+const HELP_EMOJI = "<:help:976524440080883802>";
+const processedMessages = new Set();
+const config = getConfig();
+
+function helpText() {
+  return (
+    `${HELP_EMOJI} **Solo Leveling Prefix Help**\n` +
+    "`!start` / `?start` - Register and get start PNG\n" +
+    "`!profile` / `?profile` - Profile PNG with stat buttons\n" +
+    "`!stats [@user]` - Detailed stats PNG\n" +
+    "`!hunt` / `?hunt` - Hunt PNG and possible unique card drop (0.025%)\n" +
+    "`!dungeon [easy|normal|hard|elite|raid]` - Dungeon result via Components V2\n" +
+    "`!inventory` / `?inventory` - Inventory PNG\n" +
+    "`!cards` / `?cards` - Your card collection (single unique card system)\n" +
+    "`!class [name]` - Show or change class (needs Reawakened Stone)\n" +
+    "`!rankup` - Rank exam and rankup PNG\n" +
+    "`!battle @user` / `!pvp @user` - PvP result PNG\n" +
+    "`!shop` - Open shop selector\n" +
+    "`/use` - Use bought skill scrolls for next raid\n" +
+    "`!setupdungeon [#channel] [minutes]` - Configure auto dungeon Components V2 posts\n" +
+    "`!guild_salary` - Daily salary PNG (restricted)\n" +
+    "`!gate_risk` - Risk gate PNG (restricted)\n" +
+    "`!help` - Show this list"
+  );
+}
+
+function mapCollectionCards(owned) {
+  return owned.map((card) => ({
+    title: card.name,
+    subtitle: `${card.rank}-Rank ${card.role}`,
+    meta: `ATK ${card.atk} | HP ${card.hp} | DEF ${card.def}`,
+    rarity:
+      String(card.rank).toUpperCase() === "NATIONAL" || String(card.rank).toUpperCase() === "NATIONAL LEVEL"
+        ? "Mythic"
+        : String(card.rank).toUpperCase() === "S" || String(card.rank).toUpperCase() === "S-RANK"
+          ? "Legendary"
+          : card.rank,
+    asset: card.asset || card.name,
+  }));
+}
+
+function dungeonLootText(result, monarchGranted = false) {
+  const parts = [];
+  if (result.weaponDrop) parts.push(`Weapon: ${result.weaponDrop}`);
+  if (result.companionDrop) parts.push(`Companion: ${result.companionDrop}`);
+  if (result.statusEffects?.length) parts.push(`Status: ${result.statusEffects.join(", ")}`);
+  if (monarchGranted) parts.push("Shadow Monarch Role obtained");
+  if (!parts.length) return null;
+  return parts.join(" | ");
+}
+
+module.exports = {
+  name: Events.MessageCreate,
+  async execute(message) {
+    if (!message.guild || message.author.bot) return;
+    if (config.discordGuildId && message.guild.id !== config.discordGuildId) return;
+    if (processedMessages.has(message.id)) return;
+    processedMessages.add(message.id);
+    setTimeout(() => processedMessages.delete(message.id), 15_000);
+
+    const matchedPrefix = PREFIXES.find((p) => message.content.startsWith(p));
+    if (!matchedPrefix) return;
+
+    const args = message.content.slice(matchedPrefix.length).trim().split(/\s+/);
+    const command = (args.shift() || "").toLowerCase();
+    const userId = message.author.id;
+    const guildId = message.guild.id;
+
+    try {
+      if (command === "help") {
+        await message.reply(helpText());
+        return;
+      }
+
+      if (command === "start") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const card = await generateStartCard(message.author, hunter);
+        await message.reply({ files: [{ attachment: card, name: "start-card.png" }] });
+        return;
+      }
+
+      if (command === "setupdungeon") {
+        const member = message.member;
+        const isOwner = message.guild.ownerId === message.author.id;
+        const isAdmin = member.permissions.has(PermissionsBitField.Flags.Administrator);
+        const canManageGuild = member.permissions.has(PermissionsBitField.Flags.ManageGuild);
+        if (!isOwner && !isAdmin && !canManageGuild) {
+          await message.reply("Only the server owner or co-owner (admin/manage server) can use this.");
+          return;
+        }
+
+        const firstArg = (args[0] || "").toLowerCase();
+        if (firstArg === "off" || firstArg === "disable") {
+          const config = await upsertDungeonConfig({
+            guildId,
+            channelId: null,
+            intervalMinutes: 15,
+            enabled: false,
+          });
+          await message.reply(
+            `Auto dungeon disabled.\nEnabled: ${config.dungeon_enabled ? "yes" : "no"}`
+          );
+          return;
+        }
+
+        const mentionedChannel = message.mentions.channels.first();
+        const channel = mentionedChannel || message.channel;
+
+        const minuteArg = args.find((a) => /^\d+$/.test(a));
+        const minutes = Math.max(1, Math.min(180, Number(minuteArg || 15)));
+
+        const config = await upsertDungeonConfig({
+          guildId,
+          channelId: channel.id,
+          intervalMinutes: minutes,
+          enabled: true,
+        });
+
+        await message.reply(
+          `Auto dungeon enabled in <#${config.dungeon_channel_id}> every ${config.dungeon_interval_minutes} minute(s).\n` +
+            "Use `!setupdungeon off` to disable."
+        );
+        return;
+      }
+
+      if (command === "profile") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const card = await generateProfileCard(message.author, hunter);
+        await message.reply({
+          files: [{ attachment: card, name: "profile-card.png" }],
+          components: profileRows(userId),
+        });
+        return;
+      }
+
+      if (command === "stats") {
+        const targetUser = message.mentions.users.first() || message.author;
+        if (targetUser.bot) {
+          await message.reply("Bots do not have hunter stats.");
+          return;
+        }
+
+        let hunter;
+        if (targetUser.id === userId) {
+          hunter = await ensureHunter({ userId, guildId });
+        } else {
+          hunter = await getHunter(targetUser.id, guildId);
+          if (!hunter) {
+            await message.reply(`${targetUser.username} has no hunter profile in this server yet.`);
+            return;
+          }
+        }
+
+        const [equippedShadows, cardBonus, ownedCards] = await Promise.all([
+          getEquippedShadows(targetUser.id, guildId),
+          getBattleBonus(hunter),
+          getOwnedCards(hunter),
+        ]);
+
+        const shadowPower = equippedShadows.reduce((sum, s) => sum + s.base_damage + s.ability_bonus, 0);
+        const basePower = computePower(hunter, []);
+        const finalPower = computePower(hunter, equippedShadows, cardBonus.totalPower);
+        const expNeeded = xpRequired(hunter.level);
+        const topCards = cardBonus.cards.map((c) => c.name).slice(0, 3).join(", ") || "None";
+
+        const card = await generateStatsCard(targetUser, hunter, {
+          expNeeded,
+          basePower,
+          shadowPower,
+          cardPower: cardBonus.totalPower,
+          finalPower,
+          equippedShadows: equippedShadows.length,
+          shadowSlots: hunter.shadow_slots,
+          ownedCards: ownedCards.length,
+          topCards,
+        });
+
+        await message.reply({ files: [{ attachment: card, name: "stats-card.png" }] });
+        return;
+      }
+
+      if (command === "class") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const arg = normalizeClass(args[0] || "");
+        if (!args[0]) {
+          await message.reply(
+            `Current class: **${getHunterClass(hunter)}**\nAvailable: ${HUNTER_CLASSES.join(
+              ", "
+            )}\nUse \`!class <name>\` with **Reawakened Stone** in inventory.`
+          );
+          return;
+        }
+
+        const changed = await consumeReawakenedStoneAndSetClass(hunter, arg);
+        if (!changed.ok) {
+          await message.reply("You need a **Reawakened Stone** in your inventory to change class.");
+          return;
+        }
+        await message.reply(`Class changed to **${changed.className}**. Reawakened Stone consumed.`);
+        return;
+      }
+
+      if (command === "hunt") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const cd = await getCooldown(userId, guildId, "hunt");
+        if (cd && new Date(cd.available_at).getTime() > Date.now()) {
+          await message.reply(`Hunt cooldown active: ${cooldownRemaining(cd.available_at)}s`);
+          return;
+        }
+
+        const rewards = runHunt(hunter);
+        const progression = await addXpAndGold(userId, guildId, rewards.xp, rewards.gold);
+        await setCooldown(userId, guildId, "hunt", nextCooldown(45));
+        const cardDrop = await tryGrantSingleCard(progression.hunter);
+
+        const card = await generateHuntResultCard(message.author, rewards, progression.levelsGained);
+        const files = [{ attachment: card, name: "hunt-result.png" }];
+        if (cardDrop.granted && cardDrop.imagePath) {
+          files.push({ attachment: cardDrop.imagePath, name: "single-card.png" });
+        }
+        await message.reply({
+          content: cardDrop.granted ? `You unlocked **${cardDrop.card.name}** (drop chance: 0.025%).` : undefined,
+          files,
+        });
+        return;
+      }
+
+      if (command === "dungeon") {
+        await ensureHunter({ userId, guildId });
+        const difficulty = (args[0] || "").toLowerCase();
+        if (!difficulty) {
+          await message.reply({
+            content: "Select dungeon difficulty and confirm your run.",
+            components: dungeonSelectionRows(userId),
+          });
+          return;
+        }
+        if (!DUNGEON_DIFFICULTIES[difficulty]) {
+          await message.reply("Invalid difficulty. Use: easy, normal, hard, elite, raid");
+          return;
+        }
+
+        const hunter = await ensureHunter({ userId, guildId });
+        const result = await runDungeon(hunter, difficulty);
+        let monarchGranted = false;
+        if (result.didWin && result.monarchRoleRollWon) {
+          const roleResult = await tryGrantMonarchRole(message.guild, message.author.id);
+          monarchGranted = roleResult.granted;
+        }
+        const cardDrop = await tryGrantSingleCard(result.progression?.hunter || hunter);
+        const lootText = dungeonLootText(result, monarchGranted);
+        const dungeonPayload = buildDungeonResultV2Payload(result, {
+          lootText: cardDrop.granted
+            ? `${lootText ? `${lootText} | ` : ""}Card unlocked: ${cardDrop.card.name} (0.025%)`
+            : lootText || "",
+          ephemeral: false,
+        });
+        await message.reply({
+          ...dungeonPayload,
+          flags: MessageFlags.IsComponentsV2,
+        });
+        return;
+      }
+
+      if (command === "inventory") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const card = await generateInventoryCard(message.author, hunter);
+        await message.reply({ files: [{ attachment: card, name: "inventory-card.png" }] });
+        return;
+      }
+
+      if (command === "cards") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const owned = await getOwnedCards(hunter);
+        const collection = await generateCardsCollectionCard(message.author.username, mapCollectionCards(owned));
+        await message.reply({ files: [{ attachment: collection, name: "cards-collection.png" }] });
+        return;
+      }
+
+      if (command === "rankup") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const currentIndex = RANKS.indexOf(hunter.rank);
+        if (currentIndex < 0 || currentIndex >= RANKS.length - 1) {
+          await message.reply("You are already at the maximum rank.");
+          return;
+        }
+        const nextRank = RANKS[currentIndex + 1];
+        const requiredLevel = RANK_THRESHOLDS[nextRank];
+        const examCost = 300 + currentIndex * 250;
+        if (hunter.level < requiredLevel) {
+          await message.reply(`You need level ${requiredLevel} for rank ${nextRank}.`);
+          return;
+        }
+        if (hunter.gold < examCost) {
+          await message.reply(`Not enough gold. Required: ${examCost}.`);
+          return;
+        }
+
+        await updateUser(userId, guildId, { rank: nextRank, gold: hunter.gold - examCost });
+        const card = await generateRankupCard(message.author, nextRank, hunter.rank);
+        await message.reply({ files: [{ attachment: card, name: "rankup-card.png" }] });
+        return;
+      }
+
+      if (command === "battle" || command === "pvp") {
+        const opponent = message.mentions.users.first();
+        if (!opponent || opponent.bot || opponent.id === userId) {
+          await message.reply("Use a valid opponent mention. Example: `!battle @user`");
+          return;
+        }
+
+        const attacker = await ensureHunter({ userId, guildId });
+        const defender = await ensureHunter({ userId: opponent.id, guildId });
+        const result = await runPvp(attacker, defender);
+        const card = await generateBattleResultCard(
+          { username: message.author.username },
+          { username: opponent.username },
+          result
+        );
+        await message.reply({ files: [{ attachment: card, name: "battle-result.png" }] });
+        return;
+      }
+
+      if (command === "shop") {
+        const hunter = await ensureHunter({ userId, guildId });
+        await message.reply({
+          content: buildShopText({ hunter, page: 0 }),
+          components: buildShopRowsForMessage({ userId, page: 0 }),
+        });
+        return;
+      }
+
+      if (command === "guild_salary" || command === "salary") {
+        await ensureHunter({ userId, guildId });
+        const cooldown = await getCooldown(userId, guildId, "guild_salary");
+        if (cooldown && new Date(cooldown.available_at).getTime() > Date.now()) {
+          await message.reply(`Guild salary is on cooldown. Try again in ${remainingSeconds(cooldown.available_at)}s.`);
+          return;
+        }
+
+        const gold = randomInt(200, 350);
+        const xp = randomInt(30, 65);
+        const progression = await addXpAndGold(userId, guildId, xp, gold);
+        const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
+        await setCooldown(userId, guildId, "guild_salary", tomorrow);
+
+        const card = await generateSalaryCard(message.author, gold, progression.hunter.gold);
+        await message.reply({ files: [{ attachment: card, name: "salary-card.png" }] });
+        return;
+      }
+
+      if (command === "gate_risk" || command === "gaterisk") {
+        const hunter = await ensureHunter({ userId, guildId });
+        const difficulty = "EXTREME";
+        const successChance = Math.min(80, 35 + hunter.level * 0.6 + hunter.agility * 0.5);
+        const roll = randomInt(1, 100);
+        const didWin = roll <= successChance;
+
+        let rewards = {};
+        if (didWin) {
+          const gold = randomInt(280, 520);
+          const xp = randomInt(120, 240);
+          rewards = { gold, xp };
+          await addXpAndGold(userId, guildId, xp, gold);
+        } else {
+          const penalty = randomInt(80, 180);
+          rewards = { penalty };
+          await addXpAndGold(userId, guildId, 30, -penalty);
+        }
+
+        const card = await generateGateCard(message.author, difficulty, rewards, didWin);
+        await message.reply({ files: [{ attachment: card, name: "gate-card.png" }] });
+        return;
+      }
+
+      await message.reply("Unknown prefix command. Use `!help` or `?help`.");
+    } catch (error) {
+      console.error(error);
+      await message.reply("Prefix command failed.");
+    }
+  },
+};

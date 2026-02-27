@@ -1,0 +1,4 @@
+node_modules/
+.env
+.solo-leveling.bot.lock
+*.log
