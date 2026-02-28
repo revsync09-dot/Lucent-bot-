@@ -147,12 +147,83 @@ function createLobby({ guildId, channelId, ownerId, difficultyKey = "normal" }) 
   return session;
 }
 
+function createLobbyWithId({ sessionId, guildId, channelId, ownerId, difficultyKey = "normal", maxRounds = null }) {
+  const id = String(sessionId || createId());
+  const session = {
+    id,
+    guildId,
+    channelId,
+    ownerId,
+    difficultyKey,
+    state: "lobby",
+    createdAt: Date.now(),
+    maxRounds: maxRounds && Number(maxRounds) > 0 ? Number(maxRounds) : randomInt(4, 5),
+    round: 0,
+    participants: new Map(),
+    defeated: new Set(),
+    rewards: [],
+    boss: null,
+    bannerOrder: shuffleRoundBanners(),
+  };
+  sessions.set(id, session);
+  return session;
+}
+
 function getSession(sessionId) {
   return sessions.get(String(sessionId || "")) || null;
 }
 
 function removeSession(sessionId) {
   sessions.delete(String(sessionId || ""));
+}
+
+function collectMessageText(nodes, bucket = []) {
+  if (!Array.isArray(nodes)) return bucket;
+  for (const node of nodes) {
+    if (!node) continue;
+    if (typeof node.content === "string" && node.content.trim()) {
+      bucket.push(node.content);
+    }
+    if (Array.isArray(node.components)) {
+      collectMessageText(node.components, bucket);
+    }
+  }
+  return bucket;
+}
+
+function parseDifficultyKeyFromText(text) {
+  if (!text) return "normal";
+  const match = text.match(/Difficulty:\s*\*\*([^*]+)\*\*/i);
+  if (!match) return "normal";
+  const label = String(match[1] || "").trim().toLowerCase();
+  const found = Object.entries(DUNGEON_DIFFICULTIES).find(([, cfg]) => String(cfg.label || "").toLowerCase() === label);
+  return found ? found[0] : "normal";
+}
+
+function parseMaxRoundsFromText(text) {
+  if (!text) return null;
+  const match = text.match(/Rounds:\s*\*\*(\d+)\*\*/i);
+  if (!match) return null;
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value < 1) return null;
+  return value;
+}
+
+function recoverLobbyFromMessage({ sessionId, guildId, channelId, message }) {
+  const existing = getSession(sessionId);
+  if (existing) return existing;
+
+  const text = collectMessageText(message?.components || []).join("\n");
+  const difficultyKey = parseDifficultyKeyFromText(text);
+  const maxRounds = parseMaxRoundsFromText(text);
+  return createLobbyWithId({
+    sessionId,
+    guildId,
+    channelId,
+    ownerId: "auto",
+    difficultyKey,
+    maxRounds,
+  });
 }
 
 function listParticipants(session) {
@@ -434,8 +505,10 @@ function summary(session) {
 
 module.exports = {
   createLobby,
+  createLobbyWithId,
   getSession,
   removeSession,
+  recoverLobbyFromMessage,
   joinLobby,
   startRaid,
   performAction,

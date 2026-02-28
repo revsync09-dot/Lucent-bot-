@@ -26,6 +26,7 @@ const {
   forceNextRound,
   summary,
   removeSession,
+  recoverLobbyFromMessage,
 } = require("../services/raidDungeonService");
 const {
   buildLobbyPayload,
@@ -136,7 +137,16 @@ async function handleComponent(interaction) {
 
   if (action === "raid_join" && interaction.isButton()) {
     const sessionId = interaction.customId.split(":")[1];
-    const joined = await joinLobby(sessionId, interaction.user.id, interaction.guildId);
+    let joined = await joinLobby(sessionId, interaction.user.id, interaction.guildId);
+    if (!joined.ok && joined.reason === "missing") {
+      recoverLobbyFromMessage({
+        sessionId,
+        guildId: interaction.guildId,
+        channelId: interaction.channelId,
+        message: interaction.message,
+      });
+      joined = await joinLobby(sessionId, interaction.user.id, interaction.guildId);
+    }
     if (!joined.ok) {
       const map = {
         missing: "This raid session no longer exists.",
@@ -155,7 +165,16 @@ async function handleComponent(interaction) {
 
   if (action === "raid_start" && interaction.isButton()) {
     const sessionId = interaction.customId.split(":")[1];
-    const started = await startRaid(sessionId, interaction.user.id);
+    let started = await startRaid(sessionId, interaction.user.id);
+    if (!started.ok && started.reason === "missing") {
+      recoverLobbyFromMessage({
+        sessionId,
+        guildId: interaction.guildId,
+        channelId: interaction.channelId,
+        message: interaction.message,
+      });
+      started = await startRaid(sessionId, interaction.user.id);
+    }
     if (!started.ok) {
       const text =
         started.reason === "owner_only"
