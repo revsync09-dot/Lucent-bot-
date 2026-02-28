@@ -22,11 +22,12 @@ module.exports = {
     });
 
     if (!result || !result.ok) {
+      const seconds = Math.max(1, Math.ceil(Number(result?.retryAfterMs || 0) / 1000));
       const text =
         result?.reason === "duplicate_message"
           ? "Spawn already exists in this channel."
           : result?.reason === "cooldown"
-            ? "Please wait a few seconds before spawning again."
+            ? `Please wait ${seconds}s before spawning again.`
             : "Could not spawn dungeon in this channel.";
       await sendStatus(interaction, {
         ok: false,

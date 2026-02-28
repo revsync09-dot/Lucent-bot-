@@ -15,6 +15,7 @@ const { createLobby, summary } = require("./raidDungeonService");
 
 const memoryConfig = new Map();
 const spawnJoinState = new Map();
+const manualSpawnState = new Map();
 let dbUnavailable = false;
 let loopHandle = null;
 let inTick = false;
@@ -193,6 +194,15 @@ async function markDungeonPosted(guildId, atIso) {
   if (error && isMissingSettingsTable(error)) dbUnavailable = true;
 }
 
+function pruneManualSpawnState() {
+  const now = Date.now();
+  for (const [key, ts] of manualSpawnState.entries()) {
+    if (now - Number(ts || 0) > MANUAL_SPAWN_LOCK_MS * 2) {
+      manualSpawnState.delete(key);
+    }
+  }
+}
+
 async function tryClaimDungeonSpawn(config) {
   const intervalMs = Math.max(1, Number(config?.dungeon_interval_minutes || 15)) * 60 * 1000;
   const now = Date.now();
@@ -232,45 +242,23 @@ async function tryClaimDungeonSpawn(config) {
   return claimedAtIso;
 }
 
-async function tryClaimManualSpawn(guildId) {
-  if (guildId !== LOCKED_GUILD_ID) return null;
-
+function tryClaimManualSpawn(guildId, channelId) {
+  if (guildId !== LOCKED_GUILD_ID) {
+    return { ok: false, reason: "wrong_guild", retryAfterMs: 0 };
+  }
+  pruneManualSpawnState();
+  const key = `${guildId}:${channelId}`;
   const now = Date.now();
-  const claimedAtIso = new Date(now).toISOString();
-  const thresholdIso = new Date(now - MANUAL_SPAWN_LOCK_MS).toISOString();
-
-  if (dbUnavailable) {
-    const cfg = memoryConfig.get(guildId) || {};
-    const lastMs = cfg.last_dungeon_at ? new Date(cfg.last_dungeon_at).getTime() : 0;
-    if (lastMs && now - lastMs < MANUAL_SPAWN_LOCK_MS) return null;
-    await markDungeonPosted(guildId, claimedAtIso);
-    return claimedAtIso;
+  const last = Number(manualSpawnState.get(key) || 0);
+  if (last && now - last < MANUAL_SPAWN_LOCK_MS) {
+    return {
+      ok: false,
+      reason: "cooldown",
+      retryAfterMs: MANUAL_SPAWN_LOCK_MS - (now - last),
+    };
   }
-
-  const { data, error } = await supabase
-    .from("guild_settings")
-    .update({ last_dungeon_at: claimedAtIso, updated_at: nowIso() })
-    .eq("guild_id", guildId)
-    .or(`last_dungeon_at.is.null,last_dungeon_at.lte.${thresholdIso}`)
-    .select("guild_id,last_dungeon_at")
-    .maybeSingle();
-
-  if (error) {
-    if (isMissingSettingsTable(error)) {
-      dbUnavailable = true;
-      const cfg = memoryConfig.get(guildId) || {};
-      const lastMs = cfg.last_dungeon_at ? new Date(cfg.last_dungeon_at).getTime() : 0;
-      if (lastMs && now - lastMs < MANUAL_SPAWN_LOCK_MS) return null;
-      await markDungeonPosted(guildId, claimedAtIso);
-      return claimedAtIso;
-    }
-    throw error;
-  }
-
-  if (!data) return null;
-  const old = memoryConfig.get(guildId) || { guild_id: guildId };
-  memoryConfig.set(guildId, { ...old, last_dungeon_at: claimedAtIso, updated_at: nowIso() });
-  return claimedAtIso;
+  manualSpawnState.set(key, now);
+  return { ok: true, reason: "ok", retryAfterMs: 0 };
 }
 
 function randomChoice(arr) {
@@ -371,8 +359,6 @@ async function postDungeonSpawn(client, config) {
 
 async function postManualDungeonSpawn(client, { guildId, channelId }) {
   if (guildId !== LOCKED_GUILD_ID) return { ok: false, reason: "wrong_guild" };
-  const claim = await tryClaimManualSpawn(guildId);
-  if (!claim) return { ok: false, reason: "cooldown" };
 
   const guild = client.guilds.cache.get(guildId) || (await client.guilds.fetch(guildId).catch(() => null));
   if (!guild) return { ok: false, reason: "guild_missing" };
@@ -381,6 +367,8 @@ async function postManualDungeonSpawn(client, { guildId, channelId }) {
   if (!channel || !channel.isTextBased()) return { ok: false, reason: "channel_missing" };
   const alreadyPosted = await hasRecentSpawnMessage(channel, client.user.id);
   if (alreadyPosted) return { ok: false, reason: "duplicate_message" };
+  const claim = tryClaimManualSpawn(guildId, channel.id);
+  if (!claim.ok) return { ok: false, reason: "cooldown", retryAfterMs: claim.retryAfterMs };
 
   const spawn = pickRandomDungeon();
   const lobby = createLobby({
