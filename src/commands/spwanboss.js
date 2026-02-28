@@ -16,15 +16,21 @@ module.exports = {
       return;
     }
 
-    const posted = await postManualDungeonSpawn(interaction.client, {
+    const result = await postManualDungeonSpawn(interaction.client, {
       guildId: interaction.guildId,
       channelId: interaction.channelId,
     });
 
-    if (!posted) {
+    if (!result || !result.ok) {
+      const text =
+        result?.reason === "duplicate_message"
+          ? "Spawn already exists in this channel."
+          : result?.reason === "cooldown"
+            ? "Please wait a few seconds before spawning again."
+            : "Could not spawn dungeon in this channel.";
       await sendStatus(interaction, {
         ok: false,
-        text: "A dungeon was just spawned. Wait a few seconds and try again.",
+        text,
         ephemeral: true,
       });
       return;

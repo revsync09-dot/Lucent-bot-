@@ -22,6 +22,7 @@ const SPAWN_JOIN_COOLDOWN_MS = 20_000;
 const SPAWN_JOIN_TTL_MS = 3 * 60 * 60 * 1000;
 const MANUAL_SPAWN_LOCK_MS = 15_000;
 const LOCKED_GUILD_ID = getConfig().discordGuildId;
+const DUNGEON_PING_ROLE_ID = "1477381208773230604";
 const AUTO_DUNGEON_BANNER_URL =
   "https://media.discordapp.net/attachments/1477018034169188362/1477023604771127327/a12065b307fca0a2b2018efc702d7a3b.gif?ex=69a340ed&is=69a1ef6d&hm=40e559eeef308b2082adcb3152e8bde539bbd56d79637b67416a70c730f547c5&=";
 
@@ -333,6 +334,8 @@ async function postDungeonSpawn(client, config) {
   };
   const threat = dangerMap[spawn.difficultyKey] || "Moderate";
   const detailText = [
+    `<@&${DUNGEON_PING_ROLE_ID}>`,
+    "",
     "**Auto Dungeon Spawn**",
     `Gate: **${spawn.name}**`,
     `Difficulty: **${view.difficultyLabel}**`,
@@ -360,23 +363,24 @@ async function postDungeonSpawn(client, config) {
   await channel.send({
     components: [container, row],
     flags: MessageFlags.IsComponentsV2,
+    allowedMentions: { roles: [DUNGEON_PING_ROLE_ID] },
   });
 
   await markDungeonPosted(config.guild_id, nowIso());
 }
 
 async function postManualDungeonSpawn(client, { guildId, channelId }) {
-  if (guildId !== LOCKED_GUILD_ID) return false;
+  if (guildId !== LOCKED_GUILD_ID) return { ok: false, reason: "wrong_guild" };
   const claim = await tryClaimManualSpawn(guildId);
-  if (!claim) return false;
+  if (!claim) return { ok: false, reason: "cooldown" };
 
   const guild = client.guilds.cache.get(guildId) || (await client.guilds.fetch(guildId).catch(() => null));
-  if (!guild) return false;
+  if (!guild) return { ok: false, reason: "guild_missing" };
 
   const channel = guild.channels.cache.get(channelId) || (await guild.channels.fetch(channelId).catch(() => null));
-  if (!channel || !channel.isTextBased()) return false;
+  if (!channel || !channel.isTextBased()) return { ok: false, reason: "channel_missing" };
   const alreadyPosted = await hasRecentSpawnMessage(channel, client.user.id);
-  if (alreadyPosted) return false;
+  if (alreadyPosted) return { ok: false, reason: "duplicate_message" };
 
   const spawn = pickRandomDungeon();
   const lobby = createLobby({
@@ -395,6 +399,8 @@ async function postManualDungeonSpawn(client, { guildId, channelId }) {
   };
   const threat = dangerMap[spawn.difficultyKey] || "Moderate";
   const detailText = [
+    `<@&${DUNGEON_PING_ROLE_ID}>`,
+    "",
     "**Auto Dungeon Spawn**",
     `Gate: **${spawn.name}**`,
     `Difficulty: **${view.difficultyLabel}**`,
@@ -422,9 +428,10 @@ async function postManualDungeonSpawn(client, { guildId, channelId }) {
   await channel.send({
     components: [container, row],
     flags: MessageFlags.IsComponentsV2,
+    allowedMentions: { roles: [DUNGEON_PING_ROLE_ID] },
   });
 
-  return true;
+  return { ok: true };
 }
 
 async function autoDungeonTick(client) {
@@ -505,5 +512,7 @@ module.exports = {
   reserveSpawnJoin,
   finishSpawnJoin,
 };
+
+
 
 
