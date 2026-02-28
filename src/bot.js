@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const fs = require("fs");
+const http = require("http");
 const path = require("path");
 const { Client, Collection, GatewayIntentBits } = require("discord.js");
 const { getConfig } = require("./config/config");
@@ -59,6 +60,24 @@ process.on("SIGTERM", () => {
   cleanupInstanceLock();
   process.exit(0);
 });
+
+function startHealthServer() {
+  const port = Number(process.env.PORT || 8080);
+  const server = http.createServer((req, res) => {
+    if (req.url === "/healthz") {
+      res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+      res.end("ok");
+      return;
+    }
+    res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
+    res.end("Solo Leveling bot is running");
+  });
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`[health] listening on 0.0.0.0:${port}`);
+  });
+}
+
+startHealthServer();
 
 const client = new Client({
   intents: [
