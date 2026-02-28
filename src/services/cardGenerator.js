@@ -79,6 +79,28 @@ function drawStrongText(ctx, text, x, y, size, color = "#F8FAFC", align = "left"
   ctx.textAlign = prevAlign;
 }
 
+function fitFontSize(ctx, text, initialSize, minSize, maxWidth) {
+  let size = Math.max(minSize, Number(initialSize || minSize));
+  while (size > minSize) {
+    ctx.font = `900 ${size}px Inter`;
+    if (ctx.measureText(String(text)).width <= maxWidth) return size;
+    size -= 1;
+  }
+  return minSize;
+}
+
+function ellipsizeText(ctx, text, maxWidth) {
+  const raw = String(text || "");
+  if (!raw) return raw;
+  if (ctx.measureText(raw).width <= maxWidth) return raw;
+  const dots = "...";
+  let out = raw;
+  while (out.length > 0 && ctx.measureText(`${out}${dots}`).width > maxWidth) {
+    out = out.slice(0, -1);
+  }
+  return out ? `${out}${dots}` : dots;
+}
+
 function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#06B6D4") {
   const p = Math.max(0, Math.min(1, Number(progress || 0)));
   
@@ -479,12 +501,16 @@ async function generateProfileCard(user, hunter) {
   
   const infoX = avatarX + avatarSize + 48;
   ctx.fillStyle = "#F8FAFC";
-  ctx.font = "900 56px Inter";
-  ctx.fillText(displayName, infoX, 110);
+  const profileNameMaxWidth = width - infoX - 40;
+  const profileNameSize = fitFontSize(ctx, displayName, 56, 30, profileNameMaxWidth);
+  ctx.font = `900 ${profileNameSize}px Inter`;
+  ctx.fillText(ellipsizeText(ctx, displayName, profileNameMaxWidth), infoX, 110);
 
   ctx.fillStyle = "#CBD5E1";
-  ctx.font = "900 26px Inter";
-  ctx.fillText(`Rank ${rankLabel} | Level ${hunter.level} | Points ${Number(hunter.stat_points || 0)}`, infoX, 160);
+  const profileSub = `Rank ${rankLabel} | Level ${hunter.level} | Points ${Number(hunter.stat_points || 0)}`;
+  const profileSubSize = fitFontSize(ctx, profileSub, 26, 16, profileNameMaxWidth);
+  ctx.font = `900 ${profileSubSize}px Inter`;
+  ctx.fillText(ellipsizeText(ctx, profileSub, profileNameMaxWidth), infoX, 160);
 
   
   const leftX = 48;
@@ -938,7 +964,7 @@ async function generateCardsCollectionCard(username, cards) {
     ctx.fill();
     ctx.fillStyle = "#E2E8F0";
     ctx.font = "900 32px Inter";
-    ctx.fillText("No cards collected yet. The unique card drops at 0.025%.", 78, 244);
+    ctx.fillText("No cards collected yet. The unique card drops at 0.0025%.", 78, 244);
     return toBuffer(canvas);
   }
 
@@ -1192,8 +1218,10 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   
   const titleX = avatarX + avatarSize + 48;
   ctx.fillStyle = "#F8FAFC";
-  ctx.font = "900 56px Inter";
-  ctx.fillText(displayName, titleX, 110);
+  const statsNameMaxWidth = width - titleX - 40;
+  const statsNameSize = fitFontSize(ctx, displayName, 56, 30, statsNameMaxWidth);
+  ctx.font = `900 ${statsNameSize}px Inter`;
+  ctx.fillText(ellipsizeText(ctx, displayName, statsNameMaxWidth), titleX, 110);
 
   ctx.fillStyle = "#CBD5E1";
   ctx.font = "900 26px Inter";
@@ -1257,10 +1285,13 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     }
 
     ctx.fillStyle = "#F8FAFC";
-    ctx.font = "900 56px Inter";
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
-    ctx.fillText(String(stat.value), x + 28, y + 112);
+    const valueMaxWidth = colWidth - 56;
+    const valueSize = fitFontSize(ctx, String(stat.value), 56, 24, valueMaxWidth);
+    ctx.font = `900 ${valueSize}px Inter`;
+    const valueText = ellipsizeText(ctx, String(stat.value), valueMaxWidth);
+    ctx.fillText(valueText, x + 28, y + 112);
     ctx.shadowBlur = 0;
   }
 
@@ -1392,73 +1423,58 @@ async function generateBattleResultCard(attacker, defender, result) {
   const attackerName = formatDisplayName(attacker.username);
   const defenderName = formatDisplayName(defender.username);
   const width = 1200;
-  const height = 700;
+  const height = 760;
   const canvas = new Canvas(width, height);
   const ctx = canvas.getContext("2d");
 
   await drawMainBackground(ctx, width, height);
 
-  
   const topColor = result.attackerWon ? "#10B981" : "#EF4444";
   ctx.fillStyle = topColor;
   ctx.fillRect(0, 0, width, 6);
 
-  
   ctx.fillStyle = "#F8FAFC";
   ctx.font = "900 64px Inter";
-  const battleEmoji = await loadDiscordEmojiById(STAT_EMOJI_IDS.strength);
-  if (battleEmoji) {
-    ctx.drawImage(battleEmoji, 48, 40, 44, 44);
-    ctx.fillText("Battle Result", 102, 90);
-  } else {
-    ctx.fillText("Battle Result", 48, 90);
-  }
+  ctx.fillText("Battle Result", 48, 90);
 
-  
   const badgeX = width - 280;
   const badgeY = 40;
   const badgeW = 240;
   const badgeH = 80;
-
   roundedRect(ctx, badgeX, badgeY, badgeW, badgeH, 16);
   ctx.fillStyle = result.attackerWon ? "rgba(16, 185, 129, 0.2)" : "rgba(239, 68, 68, 0.2)";
   ctx.fill();
   ctx.strokeStyle = topColor;
   ctx.lineWidth = 3;
   ctx.stroke();
-
   ctx.fillStyle = topColor;
   ctx.font = "900 48px Inter";
   ctx.textAlign = "center";
   ctx.fillText(result.attackerWon ? "VICTORY" : "DEFEAT", badgeX + badgeW / 2, badgeY + 62);
   ctx.textAlign = "left";
 
-  
   const fighterBoxW = 480;
-  const fighterBoxH = 200;
+  const fighterBoxH = 210;
   const fighterY = 160;
 
-  
   roundedRect(ctx, 48, fighterY, fighterBoxW, fighterBoxH, 16);
   ctx.fillStyle = "rgba(51, 65, 85, 0.5)";
   ctx.fill();
   ctx.strokeStyle = "#3B82F6";
   ctx.lineWidth = 2.5;
   ctx.stroke();
-
   ctx.fillStyle = "#3B82F6";
   ctx.font = "900 26px Inter";
-  ctx.fillText("🔵 Attacker", 72, fighterY + 50);
-
+  ctx.fillText("Attacker", 72, fighterY + 50);
+  const attNameSize = fitFontSize(ctx, attackerName, 40, 24, fighterBoxW - 120);
   ctx.fillStyle = "#F8FAFC";
-  ctx.font = "900 40px Inter";
-  ctx.fillText(attackerName, 72, fighterY + 100);
-
+  ctx.font = `900 ${attNameSize}px Inter`;
+  ctx.fillText(ellipsizeText(ctx, attackerName, fighterBoxW - 120), 72, fighterY + 100);
   ctx.fillStyle = "#CBD5E1";
-  ctx.font = "900 20px Inter";
-  ctx.fillText(`Power: ${result.attScore}`, 72, fighterY + 150);
+  ctx.font = "900 19px Inter";
+  ctx.fillText(`Power: ${result.attScore} | HP: ${result.attackerHp}/${result.attackerMaxHp}`, 72, fighterY + 148);
+  ctx.fillText(`Reward: +${result.rewards?.attacker?.xp || 0} XP | +${result.rewards?.attacker?.gold || 0} Gold`, 72, fighterY + 182);
 
-  
   const defenderX = 48 + fighterBoxW + 48;
   roundedRect(ctx, defenderX, fighterY, fighterBoxW, fighterBoxH, 16);
   ctx.fillStyle = "rgba(51, 65, 85, 0.5)";
@@ -1466,39 +1482,60 @@ async function generateBattleResultCard(attacker, defender, result) {
   ctx.strokeStyle = "#EF4444";
   ctx.lineWidth = 2.5;
   ctx.stroke();
-
   ctx.fillStyle = "#EF4444";
   ctx.font = "900 26px Inter";
-  ctx.fillText("🔴 Defender", defenderX + 72, fighterY + 50);
-
+  ctx.fillText("Defender", defenderX + 72, fighterY + 50);
+  const defNameSize = fitFontSize(ctx, defenderName, 40, 24, fighterBoxW - 120);
   ctx.fillStyle = "#F8FAFC";
-  ctx.font = "900 40px Inter";
-  ctx.fillText(defenderName, defenderX + 72, fighterY + 100);
-
+  ctx.font = `900 ${defNameSize}px Inter`;
+  ctx.fillText(ellipsizeText(ctx, defenderName, fighterBoxW - 120), defenderX + 72, fighterY + 100);
   ctx.fillStyle = "#CBD5E1";
-  ctx.font = "900 20px Inter";
-  ctx.fillText(`Power: ${result.defScore}`, defenderX + 72, fighterY + 150);
+  ctx.font = "900 19px Inter";
+  ctx.fillText(`Power: ${result.defScore} | HP: ${result.defenderHp}/${result.defenderMaxHp}`, defenderX + 72, fighterY + 148);
+  ctx.fillText(
+    `Reward: +${result.rewards?.defender?.xp || 0} XP | +${result.rewards?.defender?.gold || 0} Gold`,
+    defenderX + 72,
+    fighterY + 182
+  );
 
-  
   const statsBoxW = 540;
-  const statsBoxH = 120;
+  const statsBoxH = 140;
   const statsY = fighterY + fighterBoxH + 32;
-
-  
   roundedRect(ctx, 48, statsY, statsBoxW, statsBoxH, 14);
   ctx.fillStyle = "rgba(51, 65, 85, 0.5)";
   ctx.fill();
   ctx.strokeStyle = "#A78BFA";
   ctx.lineWidth = 2;
   ctx.stroke();
-
   ctx.fillStyle = "#A78BFA";
   ctx.font = "900 20px Inter";
   ctx.fillText("Win Probability", 72, statsY + 45);
-
   ctx.fillStyle = "#F8FAFC";
-  ctx.font = "900 52px Inter";
-  ctx.fillText(`${result.winChance.toFixed(1)}%`, 72, statsY + 100);
+  ctx.font = "900 48px Inter";
+  ctx.fillText(`${result.winChance.toFixed(1)}%`, 72, statsY + 98);
+  ctx.fillStyle = "#CBD5E1";
+  ctx.font = "900 18px Inter";
+  ctx.fillText(`Rounds: ${result.rounds || 1}`, 72, statsY + 126);
+
+  const logX = 610;
+  const logY = statsY;
+  const logW = width - logX - 48;
+  const logH = 140;
+  roundedRect(ctx, logX, logY, logW, logH, 14);
+  ctx.fillStyle = "rgba(51, 65, 85, 0.5)";
+  ctx.fill();
+  ctx.strokeStyle = "#22D3EE";
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  ctx.fillStyle = "#22D3EE";
+  ctx.font = "900 20px Inter";
+  ctx.fillText("Combat Log", logX + 20, logY + 34);
+  const logs = Array.isArray(result.combatLog) && result.combatLog.length ? result.combatLog : ["No combat log"];
+  ctx.fillStyle = "#E2E8F0";
+  ctx.font = "900 15px Inter";
+  for (let i = 0; i < Math.min(5, logs.length); i += 1) {
+    ctx.fillText(ellipsizeText(ctx, logs[i], logW - 40), logX + 20, logY + 62 + i * 20);
+  }
 
   return toBuffer(canvas);
 }
@@ -1939,5 +1976,6 @@ module.exports = {
   generateStartCard,
   generateDungeonSpawnCard,
 };
+
 
 

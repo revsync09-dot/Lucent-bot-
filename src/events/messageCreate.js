@@ -26,6 +26,7 @@ const { randomInt } = require("../utils/math");
 const { buildShopRowsForMessage, buildShopText } = require("../services/shopService");
 const { upsertDungeonConfig } = require("../services/autoDungeonService");
 const { getConfig } = require("../config/config");
+const { buildStatusPayload } = require("../utils/statusMessage");
 const {
   HUNTER_CLASSES,
   getHunterClass,
@@ -39,32 +40,40 @@ const PREFIXES = ["!", "?"];
 const HELP_EMOJI = "<:help:976524440080883802>";
 const processedMessages = new Set();
 const config = getConfig();
+const CHANNEL_BYPASS_USERS = new Set(["795466540140986368", "760194150452035595"]);
 
 function helpText() {
+  const lines = [
+    "SOLO LEVELING - PREFIX HELP",
+    "",
+    "START",
+    "!start / ?start            Create your hunter profile",
+    "!help / ?help              Show this list",
+    "",
+    "MAIN",
+    "!profile / ?profile        Show your hunter profile",
+    "!stats [@user]             Show detailed stats",
+    "!hunt / ?hunt              Hunt for XP and gold",
+    "!inventory / ?inventory    Show your inventory",
+    "!shop                      Open the shop",
+    "!cards / ?cards            Show your card collection",
+    "",
+    "ADVANCED",
+    "!class [name]              Change class (needs item)",
+    "!rankup                    Rank up if requirements are met",
+    "!battle @user / !pvp @user PvP battle",
+    "/use                       Use bought skill items",
+    "!setupdungeon [#ch] [min]  Configure auto dungeon (staff)",
+    "!guild_salary              Daily salary (staff)",
+    "!gate_risk                 Risk gate rewards (staff)",
+  ];
+
   return [
     `${HELP_EMOJI} **Solo Leveling Prefix Help**`,
     "",
-    "**Core**",
-    "!start / ?start -> register profile",
-    "!profile / ?profile -> profile card + stat buttons",
-    "!stats [@user] -> detailed stats card",
-    "!hunt / ?hunt -> hunt rewards + card chance",
-    "!dungeon [easy|normal|hard|elite|raid] -> raid flow",
-    "",
-    "**Progression**",
-    "!inventory / ?inventory -> inventory card",
-    "!cards / ?cards -> card collection",
-    "!class [name] -> class change (stone needed)",
-    "!rankup -> rank exam",
-    "!battle @user / !pvp @user -> PvP",
-    "",
-    "**Systems**",
-    "!shop -> open shop",
-    "/use -> activate bought skill scroll",
-    "!setupdungeon [#channel] [minutes] -> auto dungeon setup",
-    "!guild_salary -> restricted",
-    "!gate_risk -> restricted",
-    "!help -> show this list",
+    "```",
+    ...lines,
+    "```",
   ].join("\n");
 }
 
@@ -106,6 +115,7 @@ module.exports = {
   async execute(message) {
     if (!message.guild || message.author.bot) return;
     if (config.discordGuildId && message.guild.id !== config.discordGuildId) return;
+    if (config.commandChannelId && message.channelId !== config.commandChannelId && !CHANNEL_BYPASS_USERS.has(message.author.id)) return;
     if (processedMessages.has(message.id)) return;
     processedMessages.add(message.id);
     setTimeout(() => processedMessages.delete(message.id), 15_000);
@@ -262,7 +272,7 @@ module.exports = {
 
         const rewards = runHunt(hunter);
         const progression = await addXpAndGold(userId, guildId, rewards.xp, rewards.gold);
-        await setCooldown(userId, guildId, "hunt", nextCooldown(45));
+        await setCooldown(userId, guildId, "hunt", nextCooldown(300));
         const cardDrop = await tryGrantSingleCard(progression.hunter);
 
         const card = await generateHuntResultCard(message.author, rewards, progression.levelsGained);
@@ -271,48 +281,13 @@ module.exports = {
           files.push({ attachment: cardDrop.imagePath, name: "single-card.png" });
         }
         await message.reply({
-          content: cardDrop.granted ? `You unlocked **${cardDrop.card.name}** (drop chance: 0.025%).` : undefined,
+          content: cardDrop.granted ? `You unlocked **${cardDrop.card.name}** (drop chance: 0.0025%).` : undefined,
           files,
         });
         return;
       }
 
-      if (command === "dungeon") {
-        await ensureHunter({ userId, guildId });
-        const difficulty = (args[0] || "").toLowerCase();
-        if (!difficulty) {
-          await message.reply({
-            content: "Select dungeon difficulty and confirm your run.",
-            components: dungeonSelectionRows(userId),
-          });
-          return;
-        }
-        if (!DUNGEON_DIFFICULTIES[difficulty]) {
-          await message.reply("Invalid difficulty. Use: easy, normal, hard, elite, raid");
-          return;
-        }
-
-        const hunter = await ensureHunter({ userId, guildId });
-        const result = await runDungeon(hunter, difficulty);
-        let monarchGranted = false;
-        if (result.didWin && result.monarchRoleRollWon) {
-          const roleResult = await tryGrantMonarchRole(message.guild, message.author.id);
-          monarchGranted = roleResult.granted;
-        }
-        const cardDrop = await tryGrantSingleCard(result.progression?.hunter || hunter);
-        const lootText = dungeonLootText(result, monarchGranted);
-        const dungeonPayload = buildDungeonResultV2Payload(result, {
-          lootText: cardDrop.granted
-            ? `${lootText ? `${lootText} | ` : ""}Card unlocked: ${cardDrop.card.name} (0.025%)`
-            : lootText || "",
-          ephemeral: false,
-        });
-        await message.reply({
-          ...dungeonPayload,
-          flags: MessageFlags.IsComponentsV2,
-        });
-        return;
-      }
+      if (command === "dungeon") return;
 
       if (command === "inventory") {
         const hunter = await ensureHunter({ userId, guildId });
@@ -355,6 +330,12 @@ module.exports = {
       }
 
       if (command === "battle" || command === "pvp") {
+        const cd = await getCooldown(userId, guildId, "battle");
+        if (cd && new Date(cd.available_at).getTime() > Date.now()) {
+          await message.reply(`Battle cooldown active: ${cooldownRemaining(cd.available_at)}s`);
+          return;
+        }
+
         const opponent = message.mentions.users.first();
         if (!opponent || opponent.bot || opponent.id === userId) {
           await message.reply("Use a valid opponent mention. Example: `!battle @user`");
@@ -369,7 +350,14 @@ module.exports = {
           { username: opponent.username },
           result
         );
-        await message.reply({ files: [{ attachment: card, name: "battle-result.png" }] });
+        await message.reply({
+          content:
+            `Rounds: ${result.rounds} | ` +
+            `${result.attackerWon ? message.author.username : opponent.username} won\n` +
+            `You: +${result.rewards?.attacker?.xp || 0} XP, +${result.rewards?.attacker?.gold || 0} Gold`,
+          files: [{ attachment: card, name: "battle-result.png" }],
+        });
+        await setCooldown(userId, guildId, "battle", nextCooldown(300));
         return;
       }
 
@@ -403,6 +391,11 @@ module.exports = {
 
       if (command === "gate_risk" || command === "gaterisk") {
         const hunter = await ensureHunter({ userId, guildId });
+        const cooldown = await getCooldown(userId, guildId, "gate_risk");
+        if (cooldown && new Date(cooldown.available_at).getTime() > Date.now()) {
+          await message.reply(`Gate risk cooldown active: ${cooldownRemaining(cooldown.available_at)}s`);
+          return;
+        }
         const difficulty = "EXTREME";
         const successChance = Math.min(80, 35 + hunter.level * 0.6 + hunter.agility * 0.5);
         const roll = randomInt(1, 100);
@@ -421,14 +414,27 @@ module.exports = {
         }
 
         const card = await generateGateCard(message.author, difficulty, rewards, didWin);
+        await setCooldown(userId, guildId, "gate_risk", nextCooldown(600));
         await message.reply({ files: [{ attachment: card, name: "gate-card.png" }] });
         return;
       }
 
-      await message.reply("Unknown prefix command. Use `!help` or `?help`.");
+      await message.reply(
+        buildStatusPayload(message, {
+          ok: false,
+          text: "Unknown prefix command. Use !help or ?help.",
+          ephemeral: false,
+        })
+      );
     } catch (error) {
       console.error(error);
-      await message.reply("Prefix command failed.");
+      await message.reply(
+        buildStatusPayload(message, {
+          ok: false,
+          text: "An unexpected error occurred. Please try again.",
+          ephemeral: false,
+        })
+      );
     }
   },
 };

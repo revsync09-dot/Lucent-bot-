@@ -1,4 +1,13 @@
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ContainerBuilder, MessageFlags, TextDisplayBuilder } = require("discord.js");
+const {
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ContainerBuilder,
+  MediaGalleryBuilder,
+  MediaGalleryItemBuilder,
+  MessageFlags,
+  TextDisplayBuilder,
+} = require("discord.js");
 
 const ATTACK_EMOJI_ID = "1136755867899924480";
 const GUARD_EMOJI_ID = "1043563693557956708";
@@ -73,7 +82,13 @@ function buildBattlePayload(view) {
     new ButtonBuilder().setCustomId(`raid_act:${view.id}:heal`).setLabel("Heal").setStyle(ButtonStyle.Success)
   );
 
-  const container = new ContainerBuilder()
+  const container = new ContainerBuilder();
+  if (view.roundBannerUrl) {
+    container.addMediaGalleryComponents(
+      new MediaGalleryBuilder().addItems(new MediaGalleryItemBuilder().setURL(view.roundBannerUrl))
+    );
+  }
+  container
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(bossTop))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(line))
     .addTextDisplayComponents(new TextDisplayBuilder().setContent(playerList))

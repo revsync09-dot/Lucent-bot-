@@ -7,6 +7,46 @@ const { updateUser } = require("./database");
 
 const sessions = new Map();
 
+const DEFAULT_ROUND_BANNERS = [
+  "https://media.discordapp.net/attachments/1477018034169188362/1477412590534787122/sung-jin-woo-spinning-solo-leveling-episode-12-9p9rleq0o9kx8qyy.webp?ex=69a4ab32&is=69a359b2&hm=6f79fcae8bf77d9f62ed62ed92895d81051164b9227cfe2e3f58ce760028ed35&=&animated=true",
+  "https://media.discordapp.net/attachments/1477018034169188362/1477412591092633630/solo-leveling-sung-jin-woo.gif?ex=69a4ab32&is=69a359b2&hm=5308d6f264b28b31462b53f0785aa1a95fe9b7fb47d15ad0b104f10587049817&=",
+  "https://media.discordapp.net/attachments/1477018034169188362/1477412591574974645/222254.gif?ex=69a4ab32&is=69a359b2&hm=fe417bda5d5eed4e8ff4bf67595a13c721fb27e5550ccdbc8c32a2a870fc41d1&=",
+  "https://media.discordapp.net/attachments/1477018034169188362/1477412591981695088/wmp4naz677qc1.gif?ex=69a4ab32&is=69a359b2&hm=e31099880b730192ee2f8139c5f13192d48e3455f9bb916c033d7c4e796be2bf&=",
+  "https://media.discordapp.net/attachments/1477018034169188362/1477412592304525342/digging-digg.gif?ex=69a4ab33&is=69a359b3&hm=4fcede3c57c30a62615cd620ad40fa48c4146e04a83d61771202305f8b010421&=",
+];
+const ROUND_BANNERS_ENV = process.env.RAID_ROUND_BANNERS || process.env.DUNGEON_ROUND_BANNERS || "";
+
+function normalizeDiscordBannerUrl(url) {
+  const raw = String(url || "").trim();
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw);
+    if (!/discordapp\.com$/i.test(parsed.hostname) && !/discordapp\.net$/i.test(parsed.hostname)) {
+      return raw;
+    }
+    if (parsed.hostname === "cdn.discordapp.com") {
+      parsed.hostname = "media.discordapp.net";
+    }
+    if (!/\.gif$/i.test(parsed.pathname)) {
+      parsed.searchParams.set("format", "gif");
+    }
+    return parsed.toString();
+  } catch {
+    return raw;
+  }
+}
+
+function parseRoundBanners(raw) {
+  const list = String(raw || "")
+    .split(/[\n,]+/g)
+    .map((x) => x.trim())
+    .filter(Boolean);
+  if (!list.length) return DEFAULT_ROUND_BANNERS.map(normalizeDiscordBannerUrl);
+  return list.map(normalizeDiscordBannerUrl);
+}
+
+const ROUND_BANNERS = parseRoundBanners(ROUND_BANNERS_ENV);
+
 const SOLO_LEVELING_BOSSES = [
   { name: "Baran", baseHp: 3600, attack: 170 },
   { name: "Vulcan", baseHp: 3400, attack: 155 },
@@ -18,6 +58,15 @@ const SOLO_LEVELING_BOSSES = [
 
 function createId() {
   return `${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
+
+function shuffleRoundBanners() {
+  const arr = [...ROUND_BANNERS];
+  for (let i = arr.length - 1; i > 0; i -= 1) {
+    const j = randomInt(0, i);
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
 }
 
 function healthBar(current, max, length = 24) {
@@ -92,6 +141,7 @@ function createLobby({ guildId, channelId, ownerId, difficultyKey = "normal" }) 
     defeated: new Set(),
     rewards: [],
     boss: null,
+    bannerOrder: shuffleRoundBanners(),
   };
   sessions.set(sessionId, session);
   return session;
@@ -352,6 +402,10 @@ async function forceNextRound(sessionId, userId) {
 
 function summary(session) {
   const players = listParticipants(session);
+  const roundBannerUrl =
+    Array.isArray(session.bannerOrder) && session.bannerOrder.length && session.round > 0
+      ? session.bannerOrder[(session.round - 1) % session.bannerOrder.length]
+      : null;
   return {
     id: session.id,
     state: session.state,
@@ -360,6 +414,7 @@ function summary(session) {
     difficultyKey: session.difficultyKey,
     difficultyLabel: (DUNGEON_DIFFICULTIES[session.difficultyKey] || DUNGEON_DIFFICULTIES.normal).label,
     boss: session.boss,
+    roundBannerUrl,
     bossHpBar: session.boss ? healthBar(session.boss.hp, session.boss.maxHp) : null,
     players: players.map((part) => ({
       userId: part.userId,
@@ -387,3 +442,4 @@ module.exports = {
   forceNextRound,
   summary,
 };
+

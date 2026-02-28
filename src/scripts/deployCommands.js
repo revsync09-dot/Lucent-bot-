@@ -9,7 +9,10 @@ async function deploy() {
   const config = getConfig();
   const commands = [];
   const commandsPath = path.join(__dirname, "..", "commands");
-  const commandFiles = fs.readdirSync(commandsPath).filter((file) => file.endsWith(".js"));
+  const disabledCommandFiles = new Set(["dungeon.js"]);
+  const commandFiles = fs
+    .readdirSync(commandsPath)
+    .filter((file) => file.endsWith(".js") && !disabledCommandFiles.has(file));
 
   for (const file of commandFiles) {
     const command = require(path.join(commandsPath, file));

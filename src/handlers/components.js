@@ -34,6 +34,19 @@ const {
   buildRewardsPayload,
 } = require("../utils/raidV2Renderer");
 
+function isDuplicateInteractionError(error) {
+  return Boolean(error && (error.code === 40060 || error.code === 10062));
+}
+
+async function safeInteractionCall(fn) {
+  try {
+    return await fn();
+  } catch (error) {
+    if (isDuplicateInteractionError(error)) return null;
+    throw error;
+  }
+}
+
 function buildShopUpdatePayload(params) {
   const payload = buildShopPayload(params);
   payload.content = null;
@@ -125,10 +138,18 @@ async function handleComponent(interaction) {
     const sessionId = interaction.customId.split(":")[1];
     const joined = await joinLobby(sessionId, interaction.user.id, interaction.guildId);
     if (!joined.ok) {
-      await sendStatus(interaction, { ok: false, text: "Unable to join this raid session.", ephemeral: true });
+      const map = {
+        missing: "This raid session no longer exists.",
+        started: "Raid already started. You can no longer join.",
+        wrong_guild: "This raid belongs to another server.",
+        full: "This raid is full.",
+      };
+      await sendStatus(interaction, { ok: false, text: map[joined.reason] || "Unable to join this raid session.", ephemeral: true });
       return;
     }
-    await interaction.update(buildRaidUpdatePayload(buildLobbyPayload(summary(joined.session))));
+    await safeInteractionCall(() =>
+      interaction.update(buildRaidUpdatePayload(buildLobbyPayload(summary(joined.session))))
+    );
     return;
   }
 
@@ -145,7 +166,9 @@ async function handleComponent(interaction) {
       await sendStatus(interaction, { ok: false, text, ephemeral: true });
       return;
     }
-    await interaction.update(buildRaidUpdatePayload(buildBattlePayload(summary(started.session))));
+    await safeInteractionCall(() =>
+      interaction.update(buildRaidUpdatePayload(buildBattlePayload(summary(started.session))))
+    );
     return;
   }
 
@@ -164,14 +187,16 @@ async function handleComponent(interaction) {
     }
 
     const view = summary(result.session);
-    await interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)));
+    await safeInteractionCall(() =>
+      interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)))
+    );
 
     if (result.ended) {
       const won = Boolean(result.finalResult && result.finalResult.won);
       if (view.defeated.length) {
-        await interaction.followUp(buildDefeatedPayload(view));
+        await safeInteractionCall(() => interaction.followUp(buildDefeatedPayload(view)));
       }
-      await interaction.followUp(buildRewardsPayload(view, won));
+      await safeInteractionCall(() => interaction.followUp(buildRewardsPayload(view, won)));
       removeSession(sessionId);
     }
     return;
@@ -186,13 +211,15 @@ async function handleComponent(interaction) {
     }
     const session = progressed.session || getSession(sessionId);
     const view = summary(session);
-    await interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)));
+    await safeInteractionCall(() =>
+      interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)))
+    );
     if (progressed.ended && session && session.state === "ended") {
       if (view.defeated.length) {
-        await interaction.followUp(buildDefeatedPayload(view));
+        await safeInteractionCall(() => interaction.followUp(buildDefeatedPayload(view)));
       }
       const won = Boolean(progressed.finalResult && progressed.finalResult.won);
-      await interaction.followUp(buildRewardsPayload(view, won));
+      await safeInteractionCall(() => interaction.followUp(buildRewardsPayload(view, won)));
       removeSession(sessionId);
     }
     return;
@@ -206,9 +233,9 @@ async function handleComponent(interaction) {
       return;
     }
     removeSession(sessionId);
-    await interaction.update({
+    await safeInteractionCall(() => interaction.update({
       components: [],
-    });
+    }));
     await sendStatus(interaction, { ok: true, text: "Raid lobby canceled.", ephemeral: false });
     return;
   }
@@ -234,7 +261,7 @@ async function handleComponent(interaction) {
       return;
     }
 
-    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
+    await safeInteractionCall(() => interaction.deferReply({ flags: MessageFlags.Ephemeral }));
     try {
       const hunter = await ensureHunter({ userId: interaction.user.id, guildId: interaction.guildId });
       const result = await runDungeon(hunter, difficulty);
@@ -245,13 +272,15 @@ async function handleComponent(interaction) {
       }
       const cardDrop = await tryGrantSingleCard(result.progression?.hunter || hunter);
       const lootText = dungeonLootText(result, monarchGranted);
-      await interaction.editReply(
-        buildDungeonResultV2Payload(result, {
-          lootText: cardDrop.granted
-            ? `${lootText ? `${lootText} | ` : ""}Card unlocked: ${cardDrop.card.name} (0.025%)`
-            : lootText || "",
-          ephemeral: true,
-        })
+      await safeInteractionCall(() =>
+        interaction.editReply(
+          buildDungeonResultV2Payload(result, {
+            lootText: cardDrop.granted
+              ? `${lootText ? `${lootText} | ` : ""}Card unlocked: ${cardDrop.card.name} (0.0025%)`
+              : lootText || "",
+            ephemeral: true,
+          })
+        )
       );
       finishSpawnJoin(spawnId, interaction.user.id, true);
       await sendProgressionBanner(interaction, result.progression);
@@ -283,17 +312,17 @@ async function handleComponent(interaction) {
       return;
     }
     const profileCard = await generateProfileCard(interaction.user, result.hunter);
-    await interaction.update({
+    await safeInteractionCall(() => interaction.update({
       content: "",
       files: [{ attachment: profileCard, name: "profile-card.png" }],
       components: profileRows(interaction.user.id),
-    });
+    }));
     return;
   }
 
   if (action === "dungeon_select" && interaction.isStringSelectMenu()) {
     const selected = interaction.values[0];
-    await interaction.update({
+    await safeInteractionCall(() => interaction.update({
       content: `Selected difficulty: **${DUNGEON_DIFFICULTIES[selected].label}**`,
       components: [
         interaction.message.components[0],
@@ -301,10 +330,10 @@ async function handleComponent(interaction) {
           new ButtonBuilder()
             .setCustomId(`dungeon_confirm:${interaction.user.id}:${selected}`)
             .setLabel("Confirm run")
-            .setStyle(ButtonStyle.Success)
+          .setStyle(ButtonStyle.Success)
         ),
       ],
-    });
+    }));
     return;
   }
 
@@ -319,17 +348,19 @@ async function handleComponent(interaction) {
     }
     const cardDrop = await tryGrantSingleCard(result.progression?.hunter || hunter);
     const lootText = dungeonLootText(result, monarchGranted);
-    await interaction.update({
+    await safeInteractionCall(() => interaction.update({
       content: "Dungeon run finished. See the detailed result below.",
       components: dungeonSelectionRows(interaction.user.id),
-    });
-    await interaction.followUp(
-      buildDungeonResultV2Payload(result, {
-        lootText: cardDrop.granted
-          ? `${lootText ? `${lootText} | ` : ""}Card unlocked: ${cardDrop.card.name} (0.025%)`
-          : lootText || "",
-        ephemeral: true,
-      })
+    }));
+    await safeInteractionCall(() =>
+      interaction.followUp(
+        buildDungeonResultV2Payload(result, {
+          lootText: cardDrop.granted
+            ? `${lootText ? `${lootText} | ` : ""}Card unlocked: ${cardDrop.card.name} (0.0025%)`
+            : lootText || "",
+          ephemeral: true,
+        })
+      )
     );
     await sendProgressionBanner(interaction, result.progression);
     return;
@@ -347,12 +378,12 @@ async function handleComponent(interaction) {
     }
 
     const card = await generateShadowCard(shadows, interaction.user.username);
-    await interaction.reply({
+    await safeInteractionCall(() => interaction.reply({
       content: "Shadow Army",
       files: [{ attachment: card, name: "shadows.png" }],
       components: shadowsRow(interaction.user.id, shadows),
       flags: MessageFlags.Ephemeral,
-    });
+    }));
     return;
   }
 
@@ -389,13 +420,15 @@ async function handleComponent(interaction) {
       await sendStatus(interaction, { ok: false, text: "Hunter profile not found.", ephemeral: true });
       return;
     }
-    await interaction.update(
-      buildClassicShopPayload({
-        userId: interaction.user.id,
-        hunter,
-        page,
-        selectedKey: selected,
-      })
+    await safeInteractionCall(() =>
+      interaction.update(
+        buildClassicShopPayload({
+          userId: interaction.user.id,
+          hunter,
+          page,
+          selectedKey: selected,
+        })
+      )
     );
     return;
   }
@@ -432,13 +465,15 @@ async function handleComponent(interaction) {
       await sendStatus(interaction, { ok: false, text: "Hunter profile not found.", ephemeral: true });
       return;
     }
-    await interaction.update(
-      buildClassicShopPayload({
-        userId: interaction.user.id,
-        hunter,
-        page: nextPage,
-        selectedKey: selectedRaw && selectedRaw !== "none" ? selectedRaw : null,
-      })
+    await safeInteractionCall(() =>
+      interaction.update(
+        buildClassicShopPayload({
+          userId: interaction.user.id,
+          hunter,
+          page: nextPage,
+          selectedKey: selectedRaw && selectedRaw !== "none" ? selectedRaw : null,
+        })
+      )
     );
     return;
   }
@@ -459,28 +494,32 @@ async function handleComponent(interaction) {
       return;
     }
     if (hunter.gold < item.price) {
-      await interaction.update(
-        buildClassicShopPayload({
-          userId: interaction.user.id,
-          hunter,
-          page,
-          selectedKey: item.key,
-          notice: `Not enough gold. Required: ${item.price}.`,
-        })
+      await safeInteractionCall(() =>
+        interaction.update(
+          buildClassicShopPayload({
+            userId: interaction.user.id,
+            hunter,
+            page,
+            selectedKey: item.key,
+            notice: `Not enough gold. Required: ${item.price}.`,
+          })
+        )
       );
       return;
     }
 
     const patch = applyPurchase(hunter, item);
     const updated = await updateUser(interaction.user.id, interaction.guildId, patch);
-    await interaction.update(
-      buildClassicShopPayload({
-        userId: interaction.user.id,
-        hunter: updated,
-        page,
-        selectedKey: item.key,
-        notice: `Purchased ${item.name} for ${item.price} gold.`,
-      })
+    await safeInteractionCall(() =>
+      interaction.update(
+        buildClassicShopPayload({
+          userId: interaction.user.id,
+          hunter: updated,
+          page,
+          selectedKey: item.key,
+          notice: `Purchased ${item.name} for ${item.price} gold.`,
+        })
+      )
     );
     return;
   }

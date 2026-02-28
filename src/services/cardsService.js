@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { updateUser } = require("./database");
 
-const CARD_DROP_CHANCE = 0.00025; 
+const CARD_DROP_CHANCE = 0.000025; 
 const SINGLE_CARD_MARKER = "card:shadow_monarch_unique";
 const SINGLE_CARD_ASSET = "single_card";
 const SINGLE_CARD_IMAGE_PATH = path.join(process.cwd(), "assets", "cards", "single_card.png");

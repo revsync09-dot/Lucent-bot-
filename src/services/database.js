@@ -1,5 +1,17 @@
 const { supabase } = require("../lib/supabase");
 
+function normalizePatch(patch) {
+  const next = { ...patch };
+  if ("inventory" in next) {
+    next.inventory = Array.isArray(next.inventory) ? next.inventory : [];
+  }
+  if ("cooldowns" in next) {
+    const raw = next.cooldowns;
+    next.cooldowns = raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+  }
+  return next;
+}
+
 async function findUser(userId, guildId) {
   const { data, error } = await supabase
     .from("hunters")
@@ -12,7 +24,7 @@ async function findUser(userId, guildId) {
 }
 
 async function updateUser(userId, guildId, patch) {
-  let updatePatch = { ...patch, updated_at: new Date().toISOString() };
+  let updatePatch = { ...normalizePatch(patch), updated_at: new Date().toISOString() };
 
   for (let i = 0; i < 6; i += 1) {
     const { data, error } = await supabase

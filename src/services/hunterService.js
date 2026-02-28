@@ -10,6 +10,18 @@ function inferRank(level) {
   return current;
 }
 
+function normalizeHunterRecord(hunter) {
+  if (!hunter) return hunter;
+  return {
+    ...hunter,
+    inventory: Array.isArray(hunter.inventory) ? hunter.inventory : [],
+    cooldowns:
+      hunter.cooldowns && typeof hunter.cooldowns === "object" && !Array.isArray(hunter.cooldowns)
+        ? hunter.cooldowns
+        : {},
+  };
+}
+
 async function getHunter(userId, guildId) {
   const { data, error } = await supabase
     .from("hunters")
@@ -28,11 +40,11 @@ async function getHunter(userId, guildId) {
         .eq("guild_id", guildId)
         .select("*")
         .single();
-      if (!updated.error) return updated.data;
+      if (!updated.error) return normalizeHunterRecord(updated.data);
       data.rank = normalized;
     }
   }
-  return data;
+  return normalizeHunterRecord(data);
 }
 
 async function createHunter({ userId, guildId }) {
@@ -59,7 +71,7 @@ async function createHunter({ userId, guildId }) {
   
   for (let i = 0; i < 6; i += 1) {
     const { data, error } = await supabase.from("hunters").insert(attemptPayload).select("*").single();
-    if (!error) return data;
+    if (!error) return normalizeHunterRecord(data);
 
     const isMissingColumn = error.code === "PGRST204" && typeof error.message === "string";
     if (!isMissingColumn) throw error;
@@ -116,7 +128,7 @@ async function addXpAndGold(userId, guildId, xpGain, goldGain) {
 
   if (error) throw error;
   return {
-    hunter: data,
+    hunter: normalizeHunterRecord(data),
     levelsGained,
     previousLevel,
     newLevel: data.level,
@@ -139,7 +151,7 @@ async function spendGold(userId, guildId, amount) {
     .select("*")
     .single();
   if (error) throw error;
-  return { ok: true, hunter: data };
+  return { ok: true, hunter: normalizeHunterRecord(data) };
 }
 
 async function allocateStat(userId, guildId, statKey, amount = 1) {
@@ -163,7 +175,7 @@ async function allocateStat(userId, guildId, statKey, amount = 1) {
     .single();
 
   if (error) throw error;
-  return { ok: true, hunter: data };
+  return { ok: true, hunter: normalizeHunterRecord(data) };
 }
 
 module.exports = {

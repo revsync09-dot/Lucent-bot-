@@ -27,7 +27,7 @@ module.exports = {
       rewards.gold
     );
     const { hunter: updated, levelsGained } = progression;
-    await setCooldown(interaction.user.id, interaction.guildId, "hunt", nextCooldown(45));
+    await setCooldown(interaction.user.id, interaction.guildId, "hunt", nextCooldown(300));
     const cardDrop = await tryGrantSingleCard(updated);
 
     const card = await generateHuntResultCard(interaction.user, rewards, levelsGained);
@@ -37,7 +37,7 @@ module.exports = {
     }
 
     await interaction.reply({
-      content: cardDrop.granted ? `You unlocked **${cardDrop.card.name}** (drop chance: 0.025%).` : undefined,
+      content: cardDrop.granted ? `You unlocked **${cardDrop.card.name}** (drop chance: 0.0025%).` : undefined,
       files,
       flags: MessageFlags.Ephemeral,
     });

@@ -6,7 +6,8 @@ const required = [
 ];
 
 function readConfig() {
-  const LOCKED_GUILD_ID = "1425973312588091394";
+  const DEFAULT_LOCKED_GUILD_ID = "1425973312588091394";
+  const LOCKED_GUILD_ID = process.env.BOT_LOCKED_GUILD_ID || DEFAULT_LOCKED_GUILD_ID;
   const missing = required.filter((key) => !process.env[key]);
   if (missing.length) {
     throw new Error(`Missing required environment variables: ${missing.join(", ")}`);

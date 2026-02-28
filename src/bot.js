@@ -106,7 +106,8 @@ client.on("shardError", (error) => {
 });
 
 const commandsPath = path.join(__dirname, "commands");
-for (const file of fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js"))) {
+const DISABLED_COMMAND_FILES = new Set(["dungeon.js"]);
+for (const file of fs.readdirSync(commandsPath).filter((f) => f.endsWith(".js") && !DISABLED_COMMAND_FILES.has(f))) {
   const command = require(path.join(commandsPath, file));
   if (command.data && command.execute) {
     client.commands.set(command.data.name, command);

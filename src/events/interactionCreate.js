@@ -4,24 +4,29 @@ const { sendStatus } = require("../utils/statusMessage");
 const { getConfig } = require("../config/config");
 
 const executingCommands = new Set();
+const executingComponents = new Set();
 const config = getConfig();
 const PRIVILEGED_USER_ID = "795466540140986368";
+const PRIVILEGED_USER_ID_2 = "760194150452035595";
 const PRIVILEGED_ROLE_ID = "1458655699310739625";
-const RESTRICTED_SLASH_COMMANDS = new Set(["guild_salary", "gate_risk"]);
+const RESTRICTED_SLASH_COMMANDS = new Set(["guild_salary", "gate_risk", "spwanduengeon", "spwanboss"]);
+const CHANNEL_BYPASS_USERS = new Set([PRIVILEGED_USER_ID, PRIVILEGED_USER_ID_2]);
 
 module.exports = {
   name: Events.InteractionCreate,
   async execute(interaction, client) {
     try {
       if (interaction.inGuild() && config.discordGuildId && interaction.guildId !== config.discordGuildId) {
-        if (interaction.isRepliable()) {
-          await sendStatus(interaction, {
-            ok: false,
-            text: "This bot is locked to a specific server.",
-            ephemeral: true,
-          });
-        }
         return;
+      }
+
+      if (
+        interaction.isChatInputCommand() &&
+        interaction.inGuild() &&
+        config.commandChannelId &&
+        interaction.channelId !== config.commandChannelId
+      ) {
+        if (!CHANNEL_BYPASS_USERS.has(interaction.user.id)) return;
       }
 
       if (interaction.isChatInputCommand()) {
@@ -69,9 +74,18 @@ module.exports = {
         interaction.isMessageComponent() &&
         [ComponentType.Button, ComponentType.StringSelect].includes(interaction.componentType)
       ) {
+        const componentKey = interaction.id;
+        if (executingComponents.has(componentKey)) {
+          return;
+        }
+        executingComponents.add(componentKey);
+        setTimeout(() => executingComponents.delete(componentKey), 5000);
         await handleComponent(interaction);
       }
     } catch (error) {
+      if (error && (error.code === 40060 || error.code === 10062)) {
+        return;
+      }
       console.error(error);
       try {
         await sendStatus(interaction, {
