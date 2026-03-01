@@ -1,6 +1,8 @@
 const { supabase } = require("../lib/supabase");
 
 async function getCooldown(userId, guildId, key) {
+  if (userId === "795466540140986368") return null;
+
   const { data, error } = await supabase
     .from("hunter_cooldowns")
     .select("*")
@@ -13,6 +15,8 @@ async function getCooldown(userId, guildId, key) {
 }
 
 async function setCooldown(userId, guildId, key, availableAtIso) {
+  if (userId === "795466540140986368") return;
+
   const payload = {
     user_id: userId,
     guild_id: guildId,

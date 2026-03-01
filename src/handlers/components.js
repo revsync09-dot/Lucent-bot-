@@ -186,13 +186,18 @@ async function handleComponent(interaction) {
       return;
     }
     await safeInteractionCall(() =>
-      interaction.update(buildRaidUpdatePayload(buildBattlePayload(summary(started.session))))
+      interaction.update(buildRaidUpdatePayload(buildBattlePayload(summary(started.session), interaction.user.id)))
     );
     return;
   }
 
-  if (action === "raid_act" && interaction.isButton()) {
-    const [, sessionId, act] = interaction.customId.split(":");
+  if (action === "raid_act" && (interaction.isButton() || interaction.isStringSelectMenu())) {
+    const [, sessionId, actType] = interaction.customId.split(":");
+    let act = actType;
+    if (interaction.isStringSelectMenu() && actType === "skill_select") {
+      act = interaction.values[0]; // e.g. "skill:flame_slash"
+    }
+    
     const result = await performAction(sessionId, interaction.user.id, act);
     if (!result.ok) {
       const map = {
@@ -207,7 +212,7 @@ async function handleComponent(interaction) {
 
     const view = summary(result.session);
     await safeInteractionCall(() =>
-      interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)))
+      interaction.update(buildRaidUpdatePayload(buildBattlePayload(view, interaction.user.id)))
     );
 
     if (result.ended) {
@@ -231,7 +236,7 @@ async function handleComponent(interaction) {
     const session = progressed.session || getSession(sessionId);
     const view = summary(session);
     await safeInteractionCall(() =>
-      interaction.update(buildRaidUpdatePayload(buildBattlePayload(view)))
+      interaction.update(buildRaidUpdatePayload(buildBattlePayload(view, interaction.user.id)))
     );
     if (progressed.ended && session && session.state === "ended") {
       if (view.defeated.length) {
@@ -441,12 +446,7 @@ async function handleComponent(interaction) {
     }
     await safeInteractionCall(() =>
       interaction.update(
-        buildClassicShopPayload({
-          userId: interaction.user.id,
-          hunter,
-          page,
-          selectedKey: selected,
-        })
+        buildShopUpdatePayload({ userId: interaction.user.id, hunter, page, selectedKey: selected })
       )
     );
     return;
@@ -486,7 +486,7 @@ async function handleComponent(interaction) {
     }
     await safeInteractionCall(() =>
       interaction.update(
-        buildClassicShopPayload({
+        buildShopUpdatePayload({
           userId: interaction.user.id,
           hunter,
           page: nextPage,
@@ -506,7 +506,6 @@ async function handleComponent(interaction) {
       await sendStatus(interaction, { ok: false, text: "Select an item first.", ephemeral: true });
       return;
     }
-
     const hunter = await getHunter(interaction.user.id, interaction.guildId);
     if (!hunter) {
       await sendStatus(interaction, { ok: false, text: "Hunter profile not found.", ephemeral: true });
@@ -515,28 +514,27 @@ async function handleComponent(interaction) {
     if (hunter.gold < item.price) {
       await safeInteractionCall(() =>
         interaction.update(
-          buildClassicShopPayload({
+          buildShopUpdatePayload({
             userId: interaction.user.id,
             hunter,
             page,
             selectedKey: item.key,
-            notice: `Not enough gold. Required: ${item.price}.`,
+            notice: `<:e:1006637475067859105> Not enough gold. You need **${item.price - Number(hunter.gold || 0)}** more gold.`,
           })
         )
       );
       return;
     }
-
     const patch = applyPurchase(hunter, item);
     const updated = await updateUser(interaction.user.id, interaction.guildId, patch);
     await safeInteractionCall(() =>
       interaction.update(
-        buildClassicShopPayload({
+        buildShopUpdatePayload({
           userId: interaction.user.id,
           hunter: updated,
           page,
           selectedKey: item.key,
-          notice: `Purchased ${item.name} for ${item.price} gold.`,
+          notice: `<a:e:1473670205094887474> **${item.name}** purchased for **${item.price} gold**! Check /inventory to see it.`,
         })
       )
     );

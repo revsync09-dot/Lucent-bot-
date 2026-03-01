@@ -23,7 +23,7 @@ const { runPvp } = require("../services/pvpService");
 const { updateUser } = require("../services/database");
 const { RANKS, RANK_THRESHOLDS, DUNGEON_DIFFICULTIES } = require("../utils/constants");
 const { randomInt } = require("../utils/math");
-const { buildShopRowsForMessage, buildShopText } = require("../services/shopService");
+const { buildShopPayload, buildShopRowsForMessage, buildShopText } = require("../services/shopService");
 const { upsertDungeonConfig } = require("../services/autoDungeonService");
 const { getConfig } = require("../config/config");
 const { buildStatusPayload } = require("../utils/statusMessage");
@@ -43,38 +43,28 @@ const config = getConfig();
 const CHANNEL_BYPASS_USERS = new Set(["795466540140986368", "760194150452035595"]);
 
 function helpText() {
-  const lines = [
-    "SOLO LEVELING - PREFIX HELP",
-    "",
-    "START",
-    "!start / ?start            Create your hunter profile",
-    "!help / ?help              Show this list",
-    "",
-    "MAIN",
-    "!profile / ?profile        Show your hunter profile",
-    "!stats [@user]             Show detailed stats",
-    "!hunt / ?hunt              Hunt for XP and gold",
-    "!inventory / ?inventory    Show your inventory",
-    "!shop                      Open the shop",
-    "!cards / ?cards            Show your card collection",
-    "",
-    "ADVANCED",
-    "!class [name]              Change class (needs item)",
-    "!rankup                    Rank up if requirements are met",
-    "!battle @user / !pvp @user PvP battle",
-    "/use                       Use bought skill items",
-    "!setupdungeon [#ch] [min]  Configure auto dungeon (staff)",
-    "!guild_salary              Daily salary (staff)",
-    "!gate_risk                 Risk gate rewards (staff)",
-  ];
-
   return [
-    `${HELP_EMOJI} **Solo Leveling Prefix Help**`,
+    "<:help:976524440080883802> **Solo Leveling - Command List**",
     "",
-    "```",
-    ...lines,
-    "```",
-  ].join("\n");
+    "**Core Mechanics:**",
+    "`!start` - Create profile",
+    "`!profile` - Level, rank, gold, and loadout",
+    "`!stats [@u]` - Detailed combat stats",
+    "`!inventory` - Show your items",
+    "`!hunt` - Earn XP & Gold (5m CD)",
+    "`!battle [@u]` - PvP Attack another player",
+    "",
+    "**Growth & Special:**",
+    "`!rankup` - Take the exam for the next rank",
+    "`!cards` - View your Hunter card deck",
+    "`!shop` - Buy skill scrolls, mana & more",
+    "`!use [skill]` - Arm a skill for the next boss raid",
+    "`!class` - See classes. Use `!class [name]` to swap (needs Reawakened Stone)",
+    "",
+    "**Guild Commands:**",
+    "`!guild_salary` - Daily gold income",
+    "`!gate_risk` - Risk your gold for XP or lose it",
+  ].join("\\n");
 }
 
 function prefixHelpV2Payload() {
@@ -246,9 +236,14 @@ module.exports = {
         const arg = normalizeClass(args[0] || "");
         if (!args[0]) {
           await message.reply(
-            `Current class: **${getHunterClass(hunter)}**\nAvailable: ${HUNTER_CLASSES.join(
-              ", "
-            )}\nUse \`!class <name>\` with **Reawakened Stone** in inventory.`
+            `Current class: **${getHunterClass(hunter).toUpperCase()}**\n\n` +
+            "**Available Classes & Boosts:**\n" +
+            "🗡️ `warrior`  : +20% STR, +10% VIT\n" +
+            "🛡️ `tank`     : +30% VIT, +10% STR\n" +
+            "💨 `assassin` : +30% AGI\n" +
+            "🔮 `mage`     : +30% INT\n" +
+            "🐺 `summoner` : +15% INT, +15% VIT\n\n" +
+            "Use `!class <name>` to change. Requires **Reawakened Stone** (5000g in `!shop`)."
           );
           return;
         }
@@ -363,10 +358,7 @@ module.exports = {
 
       if (command === "shop") {
         const hunter = await ensureHunter({ userId, guildId });
-        await message.reply({
-          content: buildShopText({ hunter, page: 0 }),
-          components: buildShopRowsForMessage({ userId, page: 0 }),
-        });
+        await message.reply(buildShopPayload({ userId, hunter, page: 0 }));
         return;
       }
 

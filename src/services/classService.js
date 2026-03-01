@@ -32,12 +32,29 @@ async function setHunterClass(hunter, nextClass) {
 
 async function consumeReawakenedStoneAndSetClass(hunter, nextClass) {
   const inventory = Array.isArray(hunter?.inventory) ? [...hunter.inventory] : [];
-  const stoneIdx = inventory.findIndex((item) => String(item).toLowerCase() === "reawakened stone");
+  const stoneIdx = inventory.findIndex((item) => {
+    const s = String(item).toLowerCase();
+    return s === "item:reawakened_stone" || s === "reawakened_stone" || s === "reawakened stone";
+  });
   if (stoneIdx < 0) return { ok: false, reason: "missing_stone" };
   inventory.splice(stoneIdx, 1);
   const patched = withClassMarker(inventory, nextClass);
   const updated = await updateUser(hunter.user_id, hunter.guild_id, { inventory: patched });
   return { ok: true, hunter: updated, className: normalizeClass(nextClass) };
+}
+
+function getClassMultipliers(className) {
+  const cn = normalizeClass(className);
+  const m = { str: 1.0, agi: 1.0, int: 1.0, vit: 1.0 };
+  switch (cn) {
+    case "mage": m.int = 1.30; break;
+    case "assassin": m.agi = 1.30; break;
+    case "summoner": m.int = 1.15; m.vit = 1.15; break;
+    case "warrior": m.str = 1.20; m.vit = 1.10; break;
+    case "tank": m.vit = 1.30; m.str = 1.10; break;
+    default: break;
+  }
+  return m;
 }
 
 module.exports = {
@@ -46,5 +63,6 @@ module.exports = {
   setHunterClass,
   consumeReawakenedStoneAndSetClass,
   normalizeClass,
+  getClassMultipliers,
 };
 

@@ -1,9 +1,19 @@
 const { randomInt, clamp } = require("../utils/math");
 const { DUNGEON_DIFFICULTIES } = require("../utils/constants");
+const { getHunterClass, getClassMultipliers } = require("./classService");
 
 function computePower(hunter, shadows, cardBonus = 0) {
+  const className = getHunterClass(hunter);
+  const m = getClassMultipliers(className);
+
   const shadowBonus = (shadows || []).reduce((sum, s) => sum + s.base_damage + s.ability_bonus, 0);
-  return hunter.strength * 2 + hunter.agility + Math.floor(hunter.intelligence / 2) + hunter.vitality + shadowBonus + cardBonus;
+  
+  const effStr = Math.floor(hunter.strength * m.str);
+  const effAgi = Math.floor(hunter.agility * m.agi);
+  const effInt = Math.floor(hunter.intelligence * m.int);
+  const effVit = Math.floor(hunter.vitality * m.vit);
+
+  return effStr * 2 + effAgi + Math.floor(effInt / 2) + effVit + shadowBonus + cardBonus;
 }
 
 function runHunt(hunter) {

@@ -2,6 +2,7 @@ const { randomInt, clamp } = require("../utils/math");
 const { getEquippedShadows } = require("./shadowService");
 const { addXpAndGold } = require("./hunterService");
 const { normalizeRank } = require("../utils/constants");
+const { computePower } = require("./combatService");
 
 function score(hunter, shadowSum) {
   const rankBonus = {
@@ -18,7 +19,7 @@ function score(hunter, shadowSum) {
   };
 
   const mult = rankBonus[normalizeRank(hunter.rank)] || 1;
-  return Math.floor((hunter.level * 6 + hunter.strength * 2 + hunter.agility + hunter.intelligence + hunter.vitality) * mult + shadowSum);
+  return Math.floor((hunter.level * 6 + computePower(hunter, [], 0)) * mult + shadowSum);
 }
 
 async function runPvp(attacker, defender) {

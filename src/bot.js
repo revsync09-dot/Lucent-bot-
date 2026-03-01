@@ -72,6 +72,13 @@ function startHealthServer() {
     res.writeHead(200, { "content-type": "text/plain; charset=utf-8" });
     res.end("Solo Leveling bot is running");
   });
+  server.on("error", (err) => {
+    if (err.code === "EADDRINUSE") {
+      console.log(`[health] Port ${port} already in use, skipping health server.`);
+    } else {
+      console.error("[health:error]", err);
+    }
+  });
   server.listen(port, "0.0.0.0", () => {
     console.log(`[health] listening on 0.0.0.0:${port}`);
   });

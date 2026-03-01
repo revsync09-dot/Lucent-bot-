@@ -5,6 +5,7 @@ const { addRandomShadow, getEquippedShadows } = require("./shadowService");
 const { getBattleBonus } = require("./cardsService");
 const { updateUser } = require("./database");
 const { getHunterClass } = require("./classService");
+const { computePower } = require("./combatService");
 const { CLASS_WEAPON_DROPS, STATUS_EFFECTS, COMPANION_DROPS } = require("../utils/constants");
 
 function computeCombatPower(hunter, equippedShadows) {
@@ -18,7 +19,7 @@ async function runDungeon(hunter, difficultyKey) {
 
   const shadows = await getEquippedShadows(hunter.user_id, hunter.guild_id);
   const cardBonus = await getBattleBonus(hunter);
-  const playerPower = computeCombatPower(hunter, shadows) + cardBonus.totalPower;
+  const playerPower = computePower(hunter, shadows, cardBonus.totalPower);
   const enemyPower = Math.floor((hunter.level * 5 + randomInt(10, 30)) * config.multiplier);
   const winChance = clamp(55 + (playerPower - enemyPower) * 0.65, 10, 95);
   const didWin = randomInt(1, 100) <= winChance;
