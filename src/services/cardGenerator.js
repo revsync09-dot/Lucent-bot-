@@ -980,7 +980,7 @@ async function generateInventoryCard(user, hunter) {
   const rankTint  = rankColor(rankLabel);
   const items     = Array.isArray(hunter.inventory) ? hunter.inventory : [];
 
-  // ── BACKGROUND WASH ──────────────────────────────────────────────
+  
   const wash = ctx.createLinearGradient(0, 0, W, H);
   wash.addColorStop(0, "rgba(2,4,18,0.88)"); wash.addColorStop(1, "rgba(1,2,12,0.94)");
   ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
@@ -996,7 +996,7 @@ async function generateInventoryCard(user, hunter) {
   for (let i = -H; i < W + H; i += 26) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
   ctx.restore();
 
-  // ── TOP BAR ──────────────────────────────────────────────────────
+  
   const topG = ctx.createLinearGradient(0,0,W,0);
   topG.addColorStop(0,rankTint); topG.addColorStop(0.35,"#7C3AED"); topG.addColorStop(0.7,"#0EA5E9"); topG.addColorStop(1,rankTint);
   ctx.fillStyle = topG; ctx.fillRect(0,0,W,8);
@@ -1004,7 +1004,7 @@ async function generateInventoryCard(user, hunter) {
   ctx.fillStyle = tgl; ctx.fillRect(0,8,W,62);
   ctx.fillStyle = topG; ctx.fillRect(0,H-8,W,8);
 
-  // ── CORNER BRACKETS ──────────────────────────────────────────────
+  
   function drawCorner(bx,by,size,fx,fy,color) {
     ctx.save(); ctx.translate(bx,by); ctx.scale(fx?-1:1,fy?-1:1);
     ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineCap="square";
@@ -1014,7 +1014,7 @@ async function generateInventoryCard(user, hunter) {
   drawCorner(16,16,46,false,false,rankTint); drawCorner(W-16,16,46,true,false,rankTint);
   drawCorner(16,H-16,46,false,true,"#0EA5E9"); drawCorner(W-16,H-16,46,true,true,"#0EA5E9");
 
-  // ── HEADER BANNER ────────────────────────────────────────────────
+  
   const bY=24, bH=72;
   roundedRect(ctx,28,bY,W-56,bH,18);
   const bBg=ctx.createLinearGradient(28,bY,W-28,bY+bH);
@@ -1063,7 +1063,7 @@ async function generateInventoryCard(user, hunter) {
     ctx.font=numFont(14); ctx.fillStyle=s.color; ctx.fillText(String(s.value), sx+12, statY+36);
   }
 
-  // ── INVENTORY GRID ────────────────────────────────────────────────
+  
   const gridY  = statY + statH + 16;
   const COLS   = 5;
   const GAP    = 14;
@@ -1160,7 +1160,7 @@ async function generateInventoryCard(user, hunter) {
     }
   }
 
-  // ── FOOTER ───────────────────────────────────────────────────────
+  
   const fY = gridY + Math.ceil(Math.min(items.length, MAX_ITEMS) / COLS) * (TILE_H + GAP) + 8;
   if (fY < H - 40) {
     ctx.font = lblFont(13); ctx.fillStyle = "#1E3A5F"; ctx.textAlign = "center";
@@ -1443,7 +1443,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     return minSz;
   }
 
-  // ─── DARK BACKGROUND WASH ────────────────────────────────────────
+  
   const wash = ctx.createLinearGradient(0, 0, W, H);
   wash.addColorStop(0, "rgba(2, 4, 16, 0.85)");
   wash.addColorStop(0.5, "rgba(5, 8, 24, 0.78)");
@@ -1451,7 +1451,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, W, H);
 
-  // ─── SYSTEM GRID ─────────────────────────────────────────────────
+  
   ctx.save();
   ctx.globalAlpha = 0.04;
   ctx.strokeStyle = "#4A90D9";
@@ -1460,7 +1460,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   for (let gy = 0; gy < H; gy += 48) { ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
   ctx.restore();
 
-  // ─── DIAGONAL SCAN LINES ─────────────────────────────────────────
+  
   ctx.save();
   ctx.globalAlpha = 0.022;
   ctx.strokeStyle = "#7C3AED";
@@ -1468,7 +1468,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   for (let i = -H; i < W + H; i += 28) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
   ctx.restore();
 
-  // ─── TOP & BOTTOM BARS ───────────────────────────────────────────
+  
   const topGrad = ctx.createLinearGradient(0,0,W,0);
   topGrad.addColorStop(0, rankTint); topGrad.addColorStop(0.3,"#7C3AED"); topGrad.addColorStop(0.7,"#0EA5E9"); topGrad.addColorStop(1,rankTint);
   ctx.fillStyle = topGrad; ctx.fillRect(0,0,W,8);
@@ -1478,7 +1478,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   const bg2=ctx.createLinearGradient(0,H-72,0,H-8); bg2.addColorStop(0,"transparent"); bg2.addColorStop(1,rankTint+"33");
   ctx.fillStyle=bg2; ctx.fillRect(0,H-72,W,64);
 
-  // ─── CORNER BRACKETS ─────────────────────────────────────────────
+  
   function drawCorner(bx,by,size,flipX,flipY,color) {
     ctx.save(); ctx.translate(bx,by); ctx.scale(flipX?-1:1,flipY?-1:1);
     ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineCap="square";
@@ -1488,7 +1488,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   drawCorner(16,16,46,false,false,rankTint); drawCorner(W-16,16,46,true,false,rankTint);
   drawCorner(16,H-16,46,false,true,rankTint); drawCorner(W-16,H-16,46,true,true,rankTint);
 
-  // ─── LEFT PANEL ──────────────────────────────────────────────────
+  
   const LP_X=32, LP_Y=28, LP_W=360, LP_H=H-56;
   roundedRect(ctx,LP_X,LP_Y,LP_W,LP_H,24);
   const lpBg=ctx.createLinearGradient(LP_X,LP_Y,LP_X,LP_Y+LP_H);
@@ -1501,7 +1501,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   lbg.addColorStop(0,rankTint); lbg.addColorStop(0.5,"#7C3AED"); lbg.addColorStop(1,rankTint);
   ctx.fillStyle=lbg; ctx.fill();
 
-  // ─── AVATAR ──────────────────────────────────────────────────────
+  
   const AV_CX=LP_X+LP_W/2, AV_CY=LP_Y+150, AV_R=105;
   [AV_R+36,AV_R+22,AV_R+10].forEach((r,i)=>{
     ctx.beginPath(); ctx.arc(AV_CX,AV_CY,r,0,Math.PI*2);
@@ -1548,7 +1548,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   ctx.font=numFont(14); ctx.fillStyle="#FFFFFF";
   ctx.fillText("LV. "+String(hunter.level),AV_CX,lvY+24); ctx.textAlign="left";
 
-  // ─── RANK PROGRESS BAR ───────────────────────────────────────────
+  
   const rpY=AV_CY+AV_R+140, rpW=LP_W-48, rpX=LP_X+24;
   const rankIdx=RANKS.indexOf(rankLabel);
   const nextRank=rankIdx<RANKS.length-1?RANKS[rankIdx+1]:null;
@@ -1586,12 +1586,12 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.fillText(Math.floor(rankPct*100)+"%",rpX+rpFillW/2,rpBarY+15); ctx.textAlign="left";
   }
 
-  // ─── DIVIDER ─────────────────────────────────────────────────────
+  
   const divY=rpBarY+rpBarH+16;
   ctx.strokeStyle=rankTint+"30"; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(LP_X+20,divY); ctx.lineTo(LP_X+LP_W-20,divY); ctx.stroke();
 
-  // ─── RESOURCE CARDS ──────────────────────────────────────────────
+  
   const resources=[
     {key:"gold",  label:"GOLD",     value:Number(hunter.gold||0),           color:"#FBBF24"},
     {key:"mana",  label:"MANA",     value:Number(hunter.mana||0),           color:"#A78BFA"},
@@ -1633,7 +1633,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.fillText(resValStr, rx + 12, ry + resH - 10);
   }
 
-  // ─── MAIN AREA ───────────────────────────────────────────────────
+  
   const MX=LP_X+LP_W+24, MY=28, MW=W-MX-32;
 
   // SECTION HEADER HELPER
@@ -1645,7 +1645,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
 
   sysHeader(MX,MY,"HUNTER STATISTICS PANEL  v3.0","#3B82F6");
 
-  // ─── STAT GAUGE CARDS ────────────────────────────────────────────
+  
   const coreStats=[
     {key:"strength",    abbr:"STR",label:"Strength",    value:hunter.strength,    color:"#EF4444",glow:"#FF7B7B",bg:"rgba(100,20,20,0.18)"},
     {key:"agility",     abbr:"AGI",label:"Agility",     value:hunter.agility,     color:"#10B981",glow:"#34D399",bg:"rgba(16,100,60,0.18)"},
@@ -1724,7 +1724,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.textAlign="left";
   }
 
-  // ─── POWER ANALYSIS SECTION ──────────────────────────────────────
+  
   const pwSecY=gaugeY+gaugeH+26;
   sysHeader(MX,pwSecY,"COMBAT POWER ANALYSIS","#7C3AED");
 
@@ -1780,7 +1780,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     }
   }
 
-  // ─── XP BAR (ULTRA) ──────────────────────────────────────────────
+  
   const xpSecY=pwY+pwH+26;
   sysHeader(MX,xpSecY,"EXPERIENCE PROGRESS  ─  LV."+hunter.level,"#0EA5E9");
 
@@ -1834,7 +1834,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.beginPath();ctx.moveTo(sx,xpBY+4);ctx.lineTo(sx,xpBY+xpBH-4);ctx.stroke();
   }
 
-  // ── XP LABELS: left and right BELOW bar ──────────────────────────
+  
   const xpLabelY = xpBY + xpBH + 20;
   // left: current XP
   ctx.font = numFont(15); ctx.fillStyle = "#38BDF8";
@@ -1847,7 +1847,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   ctx.fillText("MAX  " + expNeeded.toLocaleString() + " XP", MX + MW - 4, xpLabelY);
   ctx.textAlign = "left";
 
-  // ─── BOTTOM INFO ROW ─────────────────────────────────────────────
+  
   const infoY=xpLabelY+18, infoH=62;
   roundedRect(ctx,MX,infoY,MW,infoH,14);
   const iBg=ctx.createLinearGradient(MX,infoY,MX+MW,infoY);
@@ -1869,7 +1869,7 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     if(i<infoItems.length-1){ctx.strokeStyle="#1E3A5F";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(MX+(i+1)*iiW,infoY+10);ctx.lineTo(MX+(i+1)*iiW,infoY+infoH-10);ctx.stroke();}
   }
 
-  // ─── WATERMARK ───────────────────────────────────────────────────
+  
   ctx.fillStyle="rgba(100,116,139,0.30)"; ctx.font=lblFont(13); ctx.textAlign="right";
   ctx.fillText("Solo Leveling RPG  •  Hunter Database",W-36,H-22); ctx.textAlign="left";
 
@@ -1978,7 +1978,7 @@ async function generateBattleResultCard(attacker, defender, result) {
   function numFont(sz) { return "900 " + sz + "px " + FONT_NUM + ", " + FONT_FB; }
   function lblFont(sz) { return "700 " + sz + "px " + FONT_LBL + ", " + FONT_FB; }
 
-  // ── BACKGROUND 
+  
   await drawMainBackground(ctx, W, H);
   const clrAtt = "#3B82F6";  // Blue for attacker
   const clrDef = "#EF4444";  // Red for defender
@@ -2004,7 +2004,7 @@ async function generateBattleResultCard(attacker, defender, result) {
   centerWash.addColorStop(1, "rgba(0,0,0,0.9)");
   ctx.fillStyle = centerWash; ctx.fillRect(0, 0, W, H);
 
-  // ── Lightning in the middle line
+  
   ctx.save();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
   ctx.lineWidth = 3;
@@ -2023,7 +2023,7 @@ async function generateBattleResultCard(attacker, defender, result) {
   ctx.lineWidth = 8; ctx.stroke();
   ctx.restore();
 
-  // ── CENTER "VS" Badge
+  
   const vsR = 80;
   ctx.save();
   ctx.shadowColor = "#F59E0B"; ctx.shadowBlur = 30;
@@ -2036,7 +2036,7 @@ async function generateBattleResultCard(attacker, defender, result) {
   ctx.restore();
   ctx.textAlign = "left";
 
-  // ── PLAYER CARDS function
+  
   function drawFighter(isAttacker, x, y) {
     const isWin = isAttacker ? result.attackerWon : !result.attackerWon;
     const clr = isAttacker ? clrAtt : clrDef;
@@ -2109,7 +2109,7 @@ async function generateBattleResultCard(attacker, defender, result) {
   drawFighter(true, 80, 180);
   drawFighter(false, W - 440 - 80, 180);
 
-  // ── COMBAT LOG (Bottom Center)
+  
   const lw = 900;
   const lh = 220;
   const lx = W/2 - lw/2;
@@ -2409,23 +2409,23 @@ async function generateStartCard(user, hunter) {
     return minSz;
   }
 
-  // ─── DARK WASH ───────────────────────────────────────────────────
+  
   const wash = ctx.createLinearGradient(0,0,W,H);
   wash.addColorStop(0,"rgba(2,4,18,0.82)"); wash.addColorStop(1,"rgba(1,2,12,0.92)");
   ctx.fillStyle=wash; ctx.fillRect(0,0,W,H);
 
-  // ─── GRID ────────────────────────────────────────────────────────
+  
   ctx.save(); ctx.globalAlpha=0.04; ctx.strokeStyle="#4A90D9"; ctx.lineWidth=1;
   for(let gx=0;gx<W;gx+=48){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke();}
   for(let gy=0;gy<H;gy+=48){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
   ctx.restore();
 
-  // ─── SCAN LINES ──────────────────────────────────────────────────
+  
   ctx.save(); ctx.globalAlpha=0.02; ctx.strokeStyle="#7C3AED"; ctx.lineWidth=1;
   for(let i=-H;i<W+H;i+=26){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke();}
   ctx.restore();
 
-  // ─── TOP + BOTTOM ACCENT BARS ────────────────────────────────────
+  
   const barGrad = ctx.createLinearGradient(0,0,W,0);
   barGrad.addColorStop(0,"#7C3AED"); barGrad.addColorStop(0.4,"#4F46E5");
   barGrad.addColorStop(0.7,"#0EA5E9"); barGrad.addColorStop(1,"#7C3AED");
@@ -2438,7 +2438,7 @@ async function generateStartCard(user, hunter) {
   bGlow.addColorStop(0,"transparent"); bGlow.addColorStop(1,"rgba(14,165,233,0.30)");
   ctx.fillStyle=bGlow; ctx.fillRect(0,H-80,W,72);
 
-  // ─── CORNER BRACKETS ─────────────────────────────────────────────
+  
   function drawCorner(bx,by,size,flipX,flipY,color) {
     ctx.save(); ctx.translate(bx,by); ctx.scale(flipX?-1:1,flipY?-1:1);
     ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineCap="square";
@@ -2448,7 +2448,7 @@ async function generateStartCard(user, hunter) {
   drawCorner(16,16,48,false,false,"#7C3AED"); drawCorner(W-16,16,48,true,false,"#7C3AED");
   drawCorner(16,H-16,48,false,true,"#0EA5E9"); drawCorner(W-16,H-16,48,true,true,"#0EA5E9");
 
-  // ─── SYSTEM AWAKENING BANNER ─────────────────────────────────────
+  
   const bannerY = 28;
   const bannerH = 80;
   roundedRect(ctx, 32, bannerY, W-64, bannerH, 18);
@@ -2476,7 +2476,7 @@ async function generateStartCard(user, hunter) {
   ctx.fillText("INITIALIZATION v1.0", W-52, bannerY+32);
   ctx.textAlign="left";
 
-  // ─── LEFT: AVATAR PANEL ──────────────────────────────────────────
+  
   const LP_X=32, LP_Y=bannerY+bannerH+16, LP_W=320, LP_H=H-LP_Y-36;
   roundedRect(ctx,LP_X,LP_Y,LP_W,LP_H,20);
   const lpBg=ctx.createLinearGradient(LP_X,LP_Y,LP_X,LP_Y+LP_H);
@@ -2564,7 +2564,7 @@ async function generateStartCard(user, hunter) {
     ctx.fillStyle=ms.color; ctx.font=numFont(msSz); ctx.fillText(ellipsizeText(ctx, msVal, msW-20), mx+10, my+msH-8);
   }
 
-  // ─── CENTER: ATTRIBUTES ──────────────────────────────────────────
+  
   const CP_X=LP_X+LP_W+18, CP_Y=LP_Y, CP_W=440, CP_H=LP_H;
   roundedRect(ctx,CP_X,CP_Y,CP_W,CP_H,20);
   const cpBg=ctx.createLinearGradient(CP_X,CP_Y,CP_X,CP_Y+CP_H);
@@ -2620,7 +2620,7 @@ async function generateStartCard(user, hunter) {
     ctx.fillStyle = a.glow; ctx.fillText(aValStr, ax+14, ay+atH-18); ctx.restore();
   }
 
-  // ─── RIGHT: GUIDE PANEL ──────────────────────────────────────────
+  
   const RP_X=CP_X+CP_W+18, RP_Y=LP_Y, RP_W=W-RP_X-36, RP_H=LP_H;
   roundedRect(ctx,RP_X,RP_Y,RP_W,RP_H,20);
   const rpBg=ctx.createLinearGradient(RP_X,RP_Y,RP_X,RP_Y+RP_H);
@@ -2670,7 +2670,7 @@ async function generateStartCard(user, hunter) {
     ctx.fillText("—  "+cmd.desc,RP_X+24+cmdW,cy+27);
   }
 
-  // ─── BOTTOM BANNER (MOTIVATION) ──────────────────────────────────
+  
   const btY=LP_Y+LP_H+10, btH=36;
   roundedRect(ctx,32,btY,W-64,btH,12);
   const btBg=ctx.createLinearGradient(32,btY,W-32,btY);

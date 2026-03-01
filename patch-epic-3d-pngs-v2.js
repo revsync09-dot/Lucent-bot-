@@ -29,9 +29,7 @@ function replaceFunction(funcName, newCode) {
   console.log("Replaced " + funcName);
 }
 
-// ---------------------------------------------------------
 // 1. 3D GLOW HELPER to make it look like a POPUP Window
-// ---------------------------------------------------------
 
 const helper3D = `
 // Helper: Draw an epic 3D System Box with deep neon glows

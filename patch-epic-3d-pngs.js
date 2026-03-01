@@ -25,9 +25,7 @@ function replaceFunction(funcName, newCode) {
   console.log(\`Replaced \${funcName}\`);
 }
 
-// ---------------------------------------------------------
 // 1. 3D GLOW HELPER to make it look like a POPUP Window
-// ---------------------------------------------------------
 
 const helper3D = \`
 // Helper: Draw an epic 3D System Box with deep neon glows
@@ -79,9 +77,8 @@ function importHelperIfMissing(helperStr) {
   }
 }
 
-// ---------------------------------------------------------
 // 2. generateProfileCard (Huge UI redesign, floating 3D stats)
-// ---------------------------------------------------------
+
 const newProfile = \`async function generateProfileCard(user, hunter) {
   const width = 1200;
   const height = 750;
@@ -231,10 +228,8 @@ const newProfile = \`async function generateProfileCard(user, hunter) {
   return buf;
 }\`;
 
-
-// ---------------------------------------------------------
 // 3. generateHuntResultCard (Monster slain, 3D drops)
-// ---------------------------------------------------------
+
 const newHunt = \`async function generateHuntResultCard(user, result, levelsGained) {
   const width = 900;
   const height = 400;
@@ -304,9 +299,8 @@ const newHunt = \`async function generateHuntResultCard(user, result, levelsGain
   return buf;
 }\`;
 
-// ---------------------------------------------------------
 // 4. generateSalaryCard (Gilded 3D Treasury box)
-// ---------------------------------------------------------
+
 const newSalary = \`async function generateSalaryCard(user, goldGained, totalGold) {
   const width = 800;
   const height = 350;
@@ -348,9 +342,8 @@ const newSalary = \`async function generateSalaryCard(user, goldGained, totalGol
   return await canvas.toBuffer("png");
 }\`;
 
-// ---------------------------------------------------------
 // 5. generateGateCard (Extreme Risk Red/Green 3D Glow)
-// ---------------------------------------------------------
+
 const newGate = \`async function generateGateCard(user, difficultyText, results, isSuccess) {
   const width = 900;
   const height = 450;
