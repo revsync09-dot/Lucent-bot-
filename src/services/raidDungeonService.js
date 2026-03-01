@@ -595,4 +595,3 @@ module.exports = {
   forceNextRound,
   summary,
 };
-

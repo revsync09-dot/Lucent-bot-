@@ -68,7 +68,6 @@ async function createHunter({ userId, guildId }) {
 
   let attemptPayload = { ...payload };
 
-  
   for (let i = 0; i < 6; i += 1) {
     const { data, error } = await supabase.from("hunters").insert(attemptPayload).select("*").single();
     if (!error) return normalizeHunterRecord(data);

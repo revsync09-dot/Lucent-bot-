@@ -1,4 +1,4 @@
-﻿const {
+const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
@@ -500,7 +500,3 @@ module.exports = {
   reserveSpawnJoin,
   finishSpawnJoin,
 };
-
-
-
-

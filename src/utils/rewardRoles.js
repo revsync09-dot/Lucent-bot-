@@ -21,4 +21,3 @@ module.exports = {
   MONARCH_ROLE_ID,
   tryGrantMonarchRole,
 };
-

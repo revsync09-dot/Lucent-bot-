@@ -4,11 +4,9 @@ const path = require("path");
 const filePath = path.join(__dirname, "src", "services", "cardGenerator.js");
 let content = fs.readFileSync(filePath, "utf8");
 
-
 const oldFn = "function setupPrimaryFont()";
 const idx = content.indexOf(oldFn);
 if (idx === -1) { console.error("setupPrimaryFont not found"); process.exit(1); }
-
 
 const setupEnd = content.indexOf("setupPrimaryFont();", idx) + "setupPrimaryFont();".length;
 
@@ -37,7 +35,6 @@ setupFonts();`;
 content = content.slice(0, idx) + newSetup + content.slice(setupEnd);
 fs.writeFileSync(filePath, content, "utf8");
 console.log("✅ Font setup patched!");
-
 
 const { FontLibrary } = require("skia-canvas");
 const orbitron = path.join(__dirname, "assets", "fonts", "Orbitron-Bold.ttf");

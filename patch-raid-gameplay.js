@@ -78,7 +78,6 @@ const newAbs = `function applyBossStrike(session) {
 `;
 content = content.replace(content.substring(content.indexOf(absMark), content.indexOf(absEndMark)), newAbs);
 
-
 // In `actionDamage`, we handle special skills better and set `p.lastAction`
 const adMark = `function actionDamage(participant, action) {`;
 const adEndMark = `function consumeHealKit(participant, guildId) {`;
@@ -188,7 +187,6 @@ const newFr = `async function finalizeRaid(session) {
 }
 `;
 content = content.replace(content.substring(content.indexOf("async " + frMark), content.indexOf(frEndMark)), newFr);
-
 
 // pass intent and MVP info out to `summary`
 content = content.replace(`bossHpBar: session.boss ? healthBar(session.boss.hp, session.boss.maxHp) : null,`, `bossHpBar: session.boss ? healthBar(session.boss.hp, session.boss.maxHp) : null,

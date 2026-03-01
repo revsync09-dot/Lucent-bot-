@@ -1,9 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
-// ── Item catalog matching shopService tokens ──────────────────────
+// Item catalog matching shopService tokens ──────────────────────
 const ITEM_CATALOG = {
-  // Consumables
+  
   "Mana Potion":              { display: "Mana Potion",         category: "Consumable", rarity: "Common",    color: "#A78BFA", icon: "🔮" },
   "Hunter Key":               { display: "Hunter Key",          category: "Consumable", rarity: "Uncommon",  color: "#22C55E", icon: "🗝️" },
   "raid_heal_kit":            { display: "Raid Medkit",         category: "Consumable", rarity: "Uncommon",  color: "#22C55E", icon: "🩺" },
@@ -12,11 +12,11 @@ const ITEM_CATALOG = {
   "material:gate_crystal":    { display: "Gate Crystal",        category: "Material",   rarity: "Rare",      color: "#3B82F6", icon: "💎" },
   "material:rune_fragment":   { display: "Rune Fragment",       category: "Material",   rarity: "Epic",      color: "#8B5CF6", icon: "🔷" },
   "material:jeju_ant_core":   { display: "Jeju Ant Core",      category: "Material",   rarity: "Epic",      color: "#8B5CF6", icon: "🐜" },
-  // Special
+
   "item:reawakened_stone":    { display: "Reawakened Stone",    category: "Special",    rarity: "Epic",      color: "#8B5CF6", icon: "🪨" },
   "item:monarch_sigil":       { display: "Monarch Sigil",       category: "Special",    rarity: "Legendary", color: "#F59E0B", icon: "👑" },
   "Stat Reset Token":         { display: "Stat Reset Token",    category: "Special",    rarity: "Rare",      color: "#3B82F6", icon: "♻️" },
-  // Skill Scrolls
+ 
   "skill_scroll:flame_slash": { display: "Flame Slash Scroll",  category: "Skill",      rarity: "Rare",      color: "#EF4444", icon: "🔥" },
   "skill_scroll:shadow_step": { display: "Shadow Step Scroll",  category: "Skill",      rarity: "Rare",      color: "#6366F1", icon: "👟" },
   "skill_scroll:monarch_roar":{ display: "Monarch Roar Scroll", category: "Skill",      rarity: "Epic",      color: "#8B5CF6", icon: "📣" },
@@ -32,7 +32,7 @@ const RARITY_COLORS = {
 
 function resolveItem(token) {
   if (ITEM_CATALOG[token]) return ITEM_CATALOG[token];
-  // Guess from token text
+
   return { display: token, category: "Item", rarity: "Common", color: "#94A3B8", icon: "📦" };
 }
 

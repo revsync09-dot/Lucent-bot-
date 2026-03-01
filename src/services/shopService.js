@@ -236,9 +236,6 @@ function pickSelected(pageItems, selectedKey) {
   return pageItems.find((x) => x.key === selectedKey) || pageItems[0];
 }
 
-/**
- * Build full v2 Components shop payload.
- */
 function buildShopPayload({ userId, hunter, page = 0, selectedKey = null, notice = "" }) {
   const p        = clampPage(page);
   const pageItems = getPageItems(p);
@@ -330,9 +327,6 @@ function buildShopPayload({ userId, hunter, page = 0, selectedKey = null, notice
   };
 }
 
-/**
- * Legacy rows (kept for compatibility if referenced elsewhere)
- */
 function buildShopRowsForMessage({ userId, page = 0, selectedKey = null }) {
   const p        = clampPage(page);
   const pageItems = getPageItems(p);

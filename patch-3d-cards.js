@@ -361,7 +361,6 @@ const newGate = `async function generateGateCard(user, difficultyText, results, 
   return await canvas.toBuffer("png");
 }`;
 
-
 safeReplace("generateProfileCard", newProfile);
 safeReplace("generateHuntResultCard", newHunt);
 safeReplace("generateSalaryCard", newSalary);

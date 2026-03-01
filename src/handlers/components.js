@@ -452,7 +452,6 @@ async function handleComponent(interaction) {
     return;
   }
 
-  
   if (action === "shop_buy" && interaction.isStringSelectMenu()) {
     const selected = interaction.values[0];
     const item = getItem(selected);

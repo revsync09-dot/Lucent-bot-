@@ -53,7 +53,6 @@ function drawEpic3DBox(ctx, x, y, w, h, baseColor, glowColor = null) {
   ctx.restore();
 }
 
-
 function drawDigitalGrid(ctx, w, h, color) {
   ctx.save();
   ctx.strokeStyle = color;
@@ -81,7 +80,6 @@ function drawSystemHeader(ctx, w, title, color) {
   ctx.fillText(title, 50, 120);
   ctx.restore();
 }
-
 
 function drawNeoUIBacking(ctx, x, y, w, h, color) {
   ctx.save();
@@ -205,8 +203,7 @@ function drawStrongText(ctx, text, x, y, size, color = "#F8FAFC", align = "left"
   ctx.textAlign = align;
   ctx.strokeText(String(text), x, y);
   ctx.fillText(String(text), x, y);
-  
-  
+
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.shadowOffsetX = 0;
@@ -241,8 +238,7 @@ function ellipsizeText(ctx, text, maxWidth) {
 
 function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#06B6D4") {
   const p = Math.max(0, Math.min(1, Number(progress || 0)));
-  
-  
+
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   roundedRect(ctx, x, y, w, h, 999);
@@ -259,8 +255,7 @@ function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#
 
   const fw = Math.max(0, (w - 4) * p);
   if (fw <= 0) return;
-  
-  
+
   roundedRect(ctx, x + 2, y + 2, fw, h - 4, 999);
   const grad = ctx.createLinearGradient(x + 2, y, x + 2 + fw, y);
   grad.addColorStop(0, colorA);
@@ -273,7 +268,6 @@ function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#
   ctx.fill();
   ctx.shadowBlur = 0;
 
-  
   roundedRect(ctx, x + 2, y + 2, fw, h - 4, 999);
   const glowGrad = ctx.createLinearGradient(x + 2, y + 2, x + 2 + fw, y + h - 2);
   glowGrad.addColorStop(0, "rgba(255, 255, 255, 0.12)");
@@ -282,7 +276,6 @@ function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#
   ctx.fillStyle = glowGrad;
   ctx.fill();
 
-  
   roundedRect(ctx, x + 2, y + 2, fw, Math.max(10, (h - 4) * 0.46), 999);
   const gloss = ctx.createLinearGradient(x + 2, y + 2, x + 2, y + h * 0.65);
   gloss.addColorStop(0, "rgba(255,255,255,0.52)");
@@ -291,7 +284,6 @@ function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#
   ctx.fillStyle = gloss;
   ctx.fill();
 
-  
   const shineW = Math.min(72, fw * 0.22);
   if (shineW > 12) {
     const sx = x + Math.max(8, fw - shineW - 12);
@@ -303,8 +295,7 @@ function drawShinyBar(ctx, x, y, w, h, progress, colorA = "#2563EB", colorB = "#
     ctx.fillStyle = shineGrad;
     ctx.fill();
   }
-  
-  
+
   roundedRect(ctx, x + 2, y + 2, fw, Math.max(4, (h - 4) * 0.15), 999);
   ctx.fillStyle = "rgba(255,255,255,0.28)";
   ctx.fill();
@@ -351,14 +342,12 @@ async function drawBackground(ctx, width, height, imagePath) {
 async function drawMainBackground(ctx, width, height) {
   await drawBackground(ctx, width, height, MAIN_BACKGROUND_PATH);
 
-  
   const darkWash = ctx.createLinearGradient(0, 0, width, height);
   darkWash.addColorStop(0, "rgba(2, 4, 12, 0.68)");
   darkWash.addColorStop(1, "rgba(3, 7, 18, 0.75)");
   ctx.fillStyle = darkWash;
   ctx.fillRect(0, 0, width, height);
 
-  
   const vignette = ctx.createRadialGradient(
     width / 2,
     height / 2,
@@ -400,8 +389,7 @@ function drawModernBox(ctx, x, y, w, h, borderColor, glowColor = null) {
     ctx.fillStyle = `${glowColor}15`;
     roundedRect(ctx, x - 12, y - 12, w + 24, h + 24, 18);
     ctx.fill();
-    
-    
+
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
     ctx.fillStyle = `${glowColor}08`;
@@ -410,7 +398,6 @@ function drawModernBox(ctx, x, y, w, h, borderColor, glowColor = null) {
     ctx.shadowBlur = 0;
   }
 
-  
   roundedRect(ctx, x, y, w, h, 16);
   const body = ctx.createLinearGradient(x, y, x, y + h);
   body.addColorStop(0, "rgba(45, 56, 75, 0.68)");
@@ -419,28 +406,23 @@ function drawModernBox(ctx, x, y, w, h, borderColor, glowColor = null) {
   ctx.fillStyle = body;
   ctx.fill();
 
-  
   ctx.strokeStyle = borderColor;
   ctx.lineWidth = 2.8;
   ctx.stroke();
-  
-  
+
   ctx.strokeStyle = `${borderColor}44`;
   ctx.lineWidth = 5;
   ctx.globalAlpha = 0.4;
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  
   drawBoxShine(ctx, x, y, w, h, glowColor || borderColor);
 
-  
   roundedRect(ctx, x + 2, y + 2, w - 4, h - 4, 14);
   ctx.strokeStyle = "rgba(255, 255, 255, 0.20)";
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  
   roundedRect(ctx, x + 6, y + 6, w - 12, Math.max(16, h * 0.24), 10);
   const strip = ctx.createLinearGradient(x, y + 6, x, y + h * 0.32);
   strip.addColorStop(0, "rgba(255,255,255,0.22)");
@@ -448,8 +430,7 @@ function drawModernBox(ctx, x, y, w, h, borderColor, glowColor = null) {
   strip.addColorStop(1, "rgba(255,255,255,0.00)");
   ctx.fillStyle = strip;
   ctx.fill();
-  
-  
+
   roundedRect(ctx, x + 3, y + h * 0.3, 2, h * 0.4, 999);
   ctx.fillStyle = "rgba(255,255,255,0.12)";
   ctx.fill();
@@ -470,7 +451,6 @@ function drawModernProgressBar(ctx, options) {
 
   const p = Math.max(0, Math.min(1, progress));
 
-  
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   roundedRect(ctx, x, y - 28, width, height + 56, 14);
@@ -484,15 +464,13 @@ function drawModernProgressBar(ctx, options) {
   ctx.stroke();
   ctx.shadowBlur = 0;
 
-  
   ctx.fillStyle = "#F0F4F8";
   ctx.font = "900 22px Inter";
   ctx.shadowColor = "transparent";
   ctx.shadowBlur = 0;
   ctx.fillText(label, x + 20, y + 2);
   ctx.shadowBlur = 0;
-  
-  
+
   roundedRect(ctx, x + 14, y + 12, width - 28, height - 24, 999);
   const trackGrad = ctx.createLinearGradient(x + 14, y + 12, x + 14, y + 12 + height - 24);
   trackGrad.addColorStop(0, "rgba(45, 55, 75, 0.80)");
@@ -503,7 +481,6 @@ function drawModernProgressBar(ctx, options) {
   ctx.lineWidth = 1.2;
   ctx.stroke();
 
-  
   const fillW = (width - 28) * p;
   if (fillW > 0) {
     roundedRect(ctx, x + 14, y + 12, fillW, height - 24, 999);
@@ -518,15 +495,13 @@ function drawModernProgressBar(ctx, options) {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    
     roundedRect(ctx, x + 14, y + 12, fillW, (height - 24) * 0.48, 999);
     const topGlow = ctx.createLinearGradient(x + 14, y + 12, x + 14, y + 12 + (height - 24) * 0.48);
     topGlow.addColorStop(0, "rgba(255,255,255,0.45)");
     topGlow.addColorStop(1, "rgba(255,255,255,0.05)");
     ctx.fillStyle = topGlow;
     ctx.fill();
-    
-    
+
     const shineW = Math.min(80, fillW * 0.25);
     if (shineW > 12) {
       const sx = x + 14 + Math.max(10, fillW - shineW - 10);
@@ -540,7 +515,6 @@ function drawModernProgressBar(ctx, options) {
     }
   }
 
-  
   const pillW = 180;
   const pillH = 38;
   const pillX = x + width - pillW - 14;
@@ -745,21 +719,18 @@ async function generateDungeonResultCard(result) {
   const accentSoft = result.didWin ? "rgba(16,185,129,0.24)" : "rgba(239,68,68,0.24)";
   const panelBg = "rgba(7, 12, 26, 0.70)";
 
-  
   const wash = ctx.createLinearGradient(0, 0, width, height);
   wash.addColorStop(0, result.didWin ? "rgba(8, 44, 34, 0.42)" : "rgba(52, 13, 16, 0.42)");
   wash.addColorStop(1, "rgba(2, 6, 23, 0.58)");
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, width, height);
 
-  
   const strip = ctx.createLinearGradient(0, 0, width, 0);
   strip.addColorStop(0, accent);
   strip.addColorStop(1, result.didWin ? "#22D3EE" : "#F97316");
   ctx.fillStyle = strip;
   ctx.fillRect(0, 0, width, 8);
 
-  
   roundedRect(ctx, 28, 28, width - 56, height - 56, 24);
   ctx.fillStyle = panelBg;
   ctx.fill();
@@ -767,7 +738,6 @@ async function generateDungeonResultCard(result) {
   ctx.lineWidth = 2.4;
   ctx.stroke();
 
-  
   const title = `Dungeon ${String(result.difficulty || "Run")}`;
   ctx.fillStyle = "#F8FAFC";
   ctx.font = "900 68px Inter";
@@ -776,7 +746,6 @@ async function generateDungeonResultCard(result) {
   ctx.font = "900 24px Inter";
   ctx.fillText("Combat analytics and reward breakdown", 72, 162);
 
-  
   const badgeX = width - 300;
   const badgeY = 64;
   const badgeW = 214;
@@ -793,7 +762,6 @@ async function generateDungeonResultCard(result) {
   ctx.fillText(result.didWin ? "VICTORY" : "DEFEAT", badgeX + badgeW / 2, badgeY + 51);
   ctx.textAlign = "left";
 
-  
   const leftX = 64;
   const leftY = 206;
   const leftW = 740;
@@ -805,7 +773,6 @@ async function generateDungeonResultCard(result) {
   ctx.lineWidth = 1.4;
   ctx.stroke();
 
-  
   const statBoxW = 340;
   const statBoxH = 116;
   const gapX = 24;
@@ -845,7 +812,6 @@ async function generateDungeonResultCard(result) {
     ctx.fillText(stat.value, x + 18, y + 98);
   });
 
-  
   const rewardY = leftY + leftH - 136;
   roundedRect(ctx, leftX + 24, rewardY, leftW - 48, 108, 14);
   ctx.fillStyle = "rgba(9, 15, 36, 0.74)";
@@ -889,7 +855,6 @@ async function generateDungeonResultCard(result) {
     ctx.fillText("No Shadow Obtained", shadowX + 18, rewardY + 62);
   }
 
-  
   const rightX = 836;
   const rightY = 206;
   const rightW = 380;
@@ -980,7 +945,6 @@ async function generateInventoryCard(user, hunter) {
   const rankTint  = rankColor(rankLabel);
   const items     = Array.isArray(hunter.inventory) ? hunter.inventory : [];
 
-  
   const wash = ctx.createLinearGradient(0, 0, W, H);
   wash.addColorStop(0, "rgba(2,4,18,0.88)"); wash.addColorStop(1, "rgba(1,2,12,0.94)");
   ctx.fillStyle = wash; ctx.fillRect(0, 0, W, H);
@@ -996,7 +960,6 @@ async function generateInventoryCard(user, hunter) {
   for (let i = -H; i < W + H; i += 26) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
   ctx.restore();
 
-  
   const topG = ctx.createLinearGradient(0,0,W,0);
   topG.addColorStop(0,rankTint); topG.addColorStop(0.35,"#7C3AED"); topG.addColorStop(0.7,"#0EA5E9"); topG.addColorStop(1,rankTint);
   ctx.fillStyle = topG; ctx.fillRect(0,0,W,8);
@@ -1004,7 +967,6 @@ async function generateInventoryCard(user, hunter) {
   ctx.fillStyle = tgl; ctx.fillRect(0,8,W,62);
   ctx.fillStyle = topG; ctx.fillRect(0,H-8,W,8);
 
-  
   function drawCorner(bx,by,size,fx,fy,color) {
     ctx.save(); ctx.translate(bx,by); ctx.scale(fx?-1:1,fy?-1:1);
     ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineCap="square";
@@ -1014,7 +976,6 @@ async function generateInventoryCard(user, hunter) {
   drawCorner(16,16,46,false,false,rankTint); drawCorner(W-16,16,46,true,false,rankTint);
   drawCorner(16,H-16,46,false,true,"#0EA5E9"); drawCorner(W-16,H-16,46,true,true,"#0EA5E9");
 
-  
   const bY=24, bH=72;
   roundedRect(ctx,28,bY,W-56,bH,18);
   const bBg=ctx.createLinearGradient(28,bY,W-28,bY+bH);
@@ -1063,7 +1024,6 @@ async function generateInventoryCard(user, hunter) {
     ctx.font=numFont(14); ctx.fillStyle=s.color; ctx.fillText(String(s.value), sx+12, statY+36);
   }
 
-  
   const gridY  = statY + statH + 16;
   const COLS   = 5;
   const GAP    = 14;
@@ -1160,7 +1120,6 @@ async function generateInventoryCard(user, hunter) {
     }
   }
 
-  
   const fY = gridY + Math.ceil(Math.min(items.length, MAX_ITEMS) / COLS) * (TILE_H + GAP) + 8;
   if (fY < H - 40) {
     ctx.font = lblFont(13); ctx.fillStyle = "#1E3A5F"; ctx.textAlign = "center";
@@ -1276,7 +1235,6 @@ async function generateLeaderboardCard(hunters, title = "Hunter Leaderboard") {
 
   await drawMainBackground(ctx, width, height);
 
-  
   const topGradient = ctx.createLinearGradient(0, 0, width, 6);
   topGradient.addColorStop(0, "#EC4899");
   topGradient.addColorStop(0.5, "#7C3AED");
@@ -1284,12 +1242,10 @@ async function generateLeaderboardCard(hunters, title = "Hunter Leaderboard") {
   ctx.fillStyle = topGradient;
   ctx.fillRect(0, 0, width, 6);
 
-  
   ctx.fillStyle = "#F8FAFC";
   ctx.font = "900 52px Inter";
   ctx.fillText(title, 48, 80);
 
-  
   const headerY = 120;
   const headerH = 50;
   
@@ -1308,15 +1264,13 @@ async function generateLeaderboardCard(hunters, title = "Hunter Leaderboard") {
   ctx.fillText("Experience", 680, headerY + 33);
   ctx.fillText("Gold", 950, headerY + 33);
 
-  
   const rowH = 70;
   const maxRows = Math.min(hunters.length, 9);
   
   hunters.slice(0, maxRows).forEach((hunter, i) => {
     const y = headerY + headerH + i * (rowH + 12);
     const isTopThree = i < 3;
-    
-    
+
     let medalColor = "#CBD5E1";
     let medalEmoji = `#${i + 1}`;
     if (i === 0) {
@@ -1337,29 +1291,24 @@ async function generateLeaderboardCard(hunters, title = "Hunter Leaderboard") {
     ctx.lineWidth = isTopThree ? 2 : 1;
     ctx.stroke();
 
-    
     ctx.fillStyle = medalColor;
     ctx.font = "900 24px Inter";
     ctx.fillText(medalEmoji, 68, y + 45);
 
-    
     ctx.fillStyle = "#F8FAFC";
     ctx.font = "900 22px Inter";
     ctx.fillText(formatDisplayName(String(hunter.username)).substring(0, 35), 140, y + 45);
 
-    
     const hunterRank = normalizeRank(hunter.rank);
     const rankTint = rankColor(hunterRank);
     ctx.fillStyle = rankTint;
     ctx.font = "900 14px Inter";
     ctx.fillText(`[${hunterRank}]`, 500, y + 25);
 
-    
     ctx.fillStyle = "#CBD5E1";
     ctx.font = "900 18px Inter";
     ctx.fillText(`Lv. ${hunter.level}`, 520, y + 50);
 
-    
     const expBarW = 180;
     const expBarH = 12;
     const maxExp = Math.ceil(100 * Math.pow(hunter.level, 1.5));
@@ -1380,7 +1329,6 @@ async function generateLeaderboardCard(hunters, title = "Hunter Leaderboard") {
     ctx.font = "900 12px Inter";
     ctx.fillText(`${Math.floor(expPercent * 100)}%`, 680, y + 50);
 
-    
     ctx.fillStyle = "#FBBF24";
     ctx.font = "900 18px Inter";
     ctx.fillText(String(hunter.gold), 950, y + 45);
@@ -1443,7 +1391,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     return minSz;
   }
 
-  
   const wash = ctx.createLinearGradient(0, 0, W, H);
   wash.addColorStop(0, "rgba(2, 4, 16, 0.85)");
   wash.addColorStop(0.5, "rgba(5, 8, 24, 0.78)");
@@ -1451,7 +1398,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   ctx.fillStyle = wash;
   ctx.fillRect(0, 0, W, H);
 
-  
   ctx.save();
   ctx.globalAlpha = 0.04;
   ctx.strokeStyle = "#4A90D9";
@@ -1460,7 +1406,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   for (let gy = 0; gy < H; gy += 48) { ctx.beginPath(); ctx.moveTo(0,gy); ctx.lineTo(W,gy); ctx.stroke(); }
   ctx.restore();
 
-  
   ctx.save();
   ctx.globalAlpha = 0.022;
   ctx.strokeStyle = "#7C3AED";
@@ -1468,7 +1413,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   for (let i = -H; i < W + H; i += 28) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i+H,H); ctx.stroke(); }
   ctx.restore();
 
-  
   const topGrad = ctx.createLinearGradient(0,0,W,0);
   topGrad.addColorStop(0, rankTint); topGrad.addColorStop(0.3,"#7C3AED"); topGrad.addColorStop(0.7,"#0EA5E9"); topGrad.addColorStop(1,rankTint);
   ctx.fillStyle = topGrad; ctx.fillRect(0,0,W,8);
@@ -1478,7 +1422,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   const bg2=ctx.createLinearGradient(0,H-72,0,H-8); bg2.addColorStop(0,"transparent"); bg2.addColorStop(1,rankTint+"33");
   ctx.fillStyle=bg2; ctx.fillRect(0,H-72,W,64);
 
-  
   function drawCorner(bx,by,size,flipX,flipY,color) {
     ctx.save(); ctx.translate(bx,by); ctx.scale(flipX?-1:1,flipY?-1:1);
     ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineCap="square";
@@ -1488,7 +1431,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   drawCorner(16,16,46,false,false,rankTint); drawCorner(W-16,16,46,true,false,rankTint);
   drawCorner(16,H-16,46,false,true,rankTint); drawCorner(W-16,H-16,46,true,true,rankTint);
 
-  
   const LP_X=32, LP_Y=28, LP_W=360, LP_H=H-56;
   roundedRect(ctx,LP_X,LP_Y,LP_W,LP_H,24);
   const lpBg=ctx.createLinearGradient(LP_X,LP_Y,LP_X,LP_Y+LP_H);
@@ -1501,7 +1443,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   lbg.addColorStop(0,rankTint); lbg.addColorStop(0.5,"#7C3AED"); lbg.addColorStop(1,rankTint);
   ctx.fillStyle=lbg; ctx.fill();
 
-  
   const AV_CX=LP_X+LP_W/2, AV_CY=LP_Y+150, AV_R=105;
   [AV_R+36,AV_R+22,AV_R+10].forEach((r,i)=>{
     ctx.beginPath(); ctx.arc(AV_CX,AV_CY,r,0,Math.PI*2);
@@ -1548,7 +1489,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   ctx.font=numFont(14); ctx.fillStyle="#FFFFFF";
   ctx.fillText("LV. "+String(hunter.level),AV_CX,lvY+24); ctx.textAlign="left";
 
-  
   const rpY=AV_CY+AV_R+140, rpW=LP_W-48, rpX=LP_X+24;
   const rankIdx=RANKS.indexOf(rankLabel);
   const nextRank=rankIdx<RANKS.length-1?RANKS[rankIdx+1]:null;
@@ -1586,12 +1526,10 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.fillText(Math.floor(rankPct*100)+"%",rpX+rpFillW/2,rpBarY+15); ctx.textAlign="left";
   }
 
-  
   const divY=rpBarY+rpBarH+16;
   ctx.strokeStyle=rankTint+"30"; ctx.lineWidth=1;
   ctx.beginPath(); ctx.moveTo(LP_X+20,divY); ctx.lineTo(LP_X+LP_W-20,divY); ctx.stroke();
 
-  
   const resources=[
     {key:"gold",  label:"GOLD",     value:Number(hunter.gold||0),           color:"#FBBF24"},
     {key:"mana",  label:"MANA",     value:Number(hunter.mana||0),           color:"#A78BFA"},
@@ -1633,7 +1571,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.fillText(resValStr, rx + 12, ry + resH - 10);
   }
 
-  
   const MX=LP_X+LP_W+24, MY=28, MW=W-MX-32;
 
   // SECTION HEADER HELPER
@@ -1645,7 +1582,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
 
   sysHeader(MX,MY,"HUNTER STATISTICS PANEL  v3.0","#3B82F6");
 
-  
   const coreStats=[
     {key:"strength",    abbr:"STR",label:"Strength",    value:hunter.strength,    color:"#EF4444",glow:"#FF7B7B",bg:"rgba(100,20,20,0.18)"},
     {key:"agility",     abbr:"AGI",label:"Agility",     value:hunter.agility,     color:"#10B981",glow:"#34D399",bg:"rgba(16,100,60,0.18)"},
@@ -1724,7 +1660,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.textAlign="left";
   }
 
-  
   const pwSecY=gaugeY+gaugeH+26;
   sysHeader(MX,pwSecY,"COMBAT POWER ANALYSIS","#7C3AED");
 
@@ -1780,7 +1715,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     }
   }
 
-  
   const xpSecY=pwY+pwH+26;
   sysHeader(MX,xpSecY,"EXPERIENCE PROGRESS  ─  LV."+hunter.level,"#0EA5E9");
 
@@ -1834,7 +1768,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     ctx.beginPath();ctx.moveTo(sx,xpBY+4);ctx.lineTo(sx,xpBY+xpBH-4);ctx.stroke();
   }
 
-  
   const xpLabelY = xpBY + xpBH + 20;
   // left: current XP
   ctx.font = numFont(15); ctx.fillStyle = "#38BDF8";
@@ -1847,7 +1780,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
   ctx.fillText("MAX  " + expNeeded.toLocaleString() + " XP", MX + MW - 4, xpLabelY);
   ctx.textAlign = "left";
 
-  
   const infoY=xpLabelY+18, infoH=62;
   roundedRect(ctx,MX,infoY,MW,infoH,14);
   const iBg=ctx.createLinearGradient(MX,infoY,MX+MW,infoY);
@@ -1869,7 +1801,6 @@ async function generateStatsCard(user, hunter, metrics = {}) {
     if(i<infoItems.length-1){ctx.strokeStyle="#1E3A5F";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(MX+(i+1)*iiW,infoY+10);ctx.lineTo(MX+(i+1)*iiW,infoY+infoH-10);ctx.stroke();}
   }
 
-  
   ctx.fillStyle="rgba(100,116,139,0.30)"; ctx.font=lblFont(13); ctx.textAlign="right";
   ctx.fillText("Solo Leveling RPG  •  Hunter Database",W-36,H-22); ctx.textAlign="left";
 
@@ -1978,7 +1909,6 @@ async function generateBattleResultCard(attacker, defender, result) {
   function numFont(sz) { return "900 " + sz + "px " + FONT_NUM + ", " + FONT_FB; }
   function lblFont(sz) { return "700 " + sz + "px " + FONT_LBL + ", " + FONT_FB; }
 
-  
   await drawMainBackground(ctx, W, H);
   const clrAtt = "#3B82F6";  // Blue for attacker
   const clrDef = "#EF4444";  // Red for defender
@@ -2004,7 +1934,6 @@ async function generateBattleResultCard(attacker, defender, result) {
   centerWash.addColorStop(1, "rgba(0,0,0,0.9)");
   ctx.fillStyle = centerWash; ctx.fillRect(0, 0, W, H);
 
-  
   ctx.save();
   ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
   ctx.lineWidth = 3;
@@ -2023,7 +1952,6 @@ async function generateBattleResultCard(attacker, defender, result) {
   ctx.lineWidth = 8; ctx.stroke();
   ctx.restore();
 
-  
   const vsR = 80;
   ctx.save();
   ctx.shadowColor = "#F59E0B"; ctx.shadowBlur = 30;
@@ -2036,7 +1964,6 @@ async function generateBattleResultCard(attacker, defender, result) {
   ctx.restore();
   ctx.textAlign = "left";
 
-  
   function drawFighter(isAttacker, x, y) {
     const isWin = isAttacker ? result.attackerWon : !result.attackerWon;
     const clr = isAttacker ? clrAtt : clrDef;
@@ -2109,7 +2036,6 @@ async function generateBattleResultCard(attacker, defender, result) {
   drawFighter(true, 80, 180);
   drawFighter(false, W - 440 - 80, 180);
 
-  
   const lw = 900;
   const lh = 220;
   const lx = W/2 - lw/2;
@@ -2161,22 +2087,18 @@ async function generateRankupCard(user, newRank, previousRank) {
 
   await drawMainBackground(ctx, width, height);
 
-  
   ctx.fillStyle = "#A855F7";
   ctx.fillRect(0, 0, width, 6);
 
-  
   ctx.fillStyle = "#F8FAFC";
   ctx.font = "900 64px Inter";
   ctx.fillText("🎖️ Rank Up!", 48, 100);
 
-  
   const boxW = 400;
   const boxH = 240;
   const startY = 140;
   const gap = 32;
 
-  
   roundedRect(ctx, 48, startY, boxW, boxH, 16);
   ctx.fillStyle = "rgba(51, 65, 85, 0.5)";
   ctx.fill();
@@ -2192,14 +2114,12 @@ async function generateRankupCard(user, newRank, previousRank) {
   ctx.font = "900 80px Inter";
   ctx.fillText(previousRank, 72, startY + 160);
 
-  
   ctx.fillStyle = "#A855F7";
   ctx.font = "900 48px Inter";
   ctx.textAlign = "center";
   ctx.fillText("→", 560 + boxW / 2, startY + 150);
   ctx.textAlign = "left";
 
-  
   const normalizedNewRank = normalizeRank(newRank);
   const rankTint = rankColor(normalizedNewRank);
 
@@ -2219,7 +2139,6 @@ async function generateRankupCard(user, newRank, previousRank) {
   ctx.font = "900 80px Inter";
   ctx.fillText(normalizedNewRank, afterX + 72, startY + 160);
 
-  
   ctx.fillStyle = "#CBD5E1";
   ctx.font = "900 22px Inter";
   ctx.fillText(`Congratulations, ${displayName}! You've successfully ranked up!`, 48, 520);
@@ -2409,23 +2328,19 @@ async function generateStartCard(user, hunter) {
     return minSz;
   }
 
-  
   const wash = ctx.createLinearGradient(0,0,W,H);
   wash.addColorStop(0,"rgba(2,4,18,0.82)"); wash.addColorStop(1,"rgba(1,2,12,0.92)");
   ctx.fillStyle=wash; ctx.fillRect(0,0,W,H);
 
-  
   ctx.save(); ctx.globalAlpha=0.04; ctx.strokeStyle="#4A90D9"; ctx.lineWidth=1;
   for(let gx=0;gx<W;gx+=48){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke();}
   for(let gy=0;gy<H;gy+=48){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke();}
   ctx.restore();
 
-  
   ctx.save(); ctx.globalAlpha=0.02; ctx.strokeStyle="#7C3AED"; ctx.lineWidth=1;
   for(let i=-H;i<W+H;i+=26){ctx.beginPath();ctx.moveTo(i,0);ctx.lineTo(i+H,H);ctx.stroke();}
   ctx.restore();
 
-  
   const barGrad = ctx.createLinearGradient(0,0,W,0);
   barGrad.addColorStop(0,"#7C3AED"); barGrad.addColorStop(0.4,"#4F46E5");
   barGrad.addColorStop(0.7,"#0EA5E9"); barGrad.addColorStop(1,"#7C3AED");
@@ -2438,7 +2353,6 @@ async function generateStartCard(user, hunter) {
   bGlow.addColorStop(0,"transparent"); bGlow.addColorStop(1,"rgba(14,165,233,0.30)");
   ctx.fillStyle=bGlow; ctx.fillRect(0,H-80,W,72);
 
-  
   function drawCorner(bx,by,size,flipX,flipY,color) {
     ctx.save(); ctx.translate(bx,by); ctx.scale(flipX?-1:1,flipY?-1:1);
     ctx.strokeStyle=color; ctx.lineWidth=3; ctx.lineCap="square";
@@ -2448,7 +2362,6 @@ async function generateStartCard(user, hunter) {
   drawCorner(16,16,48,false,false,"#7C3AED"); drawCorner(W-16,16,48,true,false,"#7C3AED");
   drawCorner(16,H-16,48,false,true,"#0EA5E9"); drawCorner(W-16,H-16,48,true,true,"#0EA5E9");
 
-  
   const bannerY = 28;
   const bannerH = 80;
   roundedRect(ctx, 32, bannerY, W-64, bannerH, 18);
@@ -2476,7 +2389,6 @@ async function generateStartCard(user, hunter) {
   ctx.fillText("INITIALIZATION v1.0", W-52, bannerY+32);
   ctx.textAlign="left";
 
-  
   const LP_X=32, LP_Y=bannerY+bannerH+16, LP_W=320, LP_H=H-LP_Y-36;
   roundedRect(ctx,LP_X,LP_Y,LP_W,LP_H,20);
   const lpBg=ctx.createLinearGradient(LP_X,LP_Y,LP_X,LP_Y+LP_H);
@@ -2564,7 +2476,6 @@ async function generateStartCard(user, hunter) {
     ctx.fillStyle=ms.color; ctx.font=numFont(msSz); ctx.fillText(ellipsizeText(ctx, msVal, msW-20), mx+10, my+msH-8);
   }
 
-  
   const CP_X=LP_X+LP_W+18, CP_Y=LP_Y, CP_W=440, CP_H=LP_H;
   roundedRect(ctx,CP_X,CP_Y,CP_W,CP_H,20);
   const cpBg=ctx.createLinearGradient(CP_X,CP_Y,CP_X,CP_Y+CP_H);
@@ -2620,7 +2531,6 @@ async function generateStartCard(user, hunter) {
     ctx.fillStyle = a.glow; ctx.fillText(aValStr, ax+14, ay+atH-18); ctx.restore();
   }
 
-  
   const RP_X=CP_X+CP_W+18, RP_Y=LP_Y, RP_W=W-RP_X-36, RP_H=LP_H;
   roundedRect(ctx,RP_X,RP_Y,RP_W,RP_H,20);
   const rpBg=ctx.createLinearGradient(RP_X,RP_Y,RP_X,RP_Y+RP_H);
@@ -2670,7 +2580,6 @@ async function generateStartCard(user, hunter) {
     ctx.fillText("—  "+cmd.desc,RP_X+24+cmdW,cy+27);
   }
 
-  
   const btY=LP_Y+LP_H+10, btH=36;
   roundedRect(ctx,32,btY,W-64,btH,12);
   const btBg=ctx.createLinearGradient(32,btY,W-32,btY);
@@ -2710,7 +2619,6 @@ async function generateDungeonSpawnCard(data) {
   ctx.fillStyle = accentGrad;
   ctx.fillRect(0, 0, width, 8);
 
-  
   const ambient = ctx.createRadialGradient(width * 0.7, 120, 20, width * 0.7, 120, 320);
   ambient.addColorStop(0, `${accent}55`);
   ambient.addColorStop(1, "rgba(0,0,0,0)");
@@ -2734,7 +2642,6 @@ async function generateDungeonSpawnCard(data) {
   const gateName = String(data.dungeonName || "Unknown Gate");
   ctx.fillText(gateName.slice(0, 24), 72, 340);
 
-  
   roundedRect(ctx, 72, 374, 360, 74, 999);
   ctx.fillStyle = "rgba(15, 23, 42, 0.78)";
   ctx.fill();
@@ -2749,7 +2656,6 @@ async function generateDungeonSpawnCard(data) {
   ctx.font = "900 44px Inter";
   ctx.fillText(String(data.difficultyLabel || "Normal"), 245, 422);
 
-  
   const railX = 760;
   const railY = 242;
   const railW = 450;
@@ -2813,6 +2719,3 @@ module.exports = {
   generateStartCard,
   generateDungeonSpawnCard,
 };
-
-
-
